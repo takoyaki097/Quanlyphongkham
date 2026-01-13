@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>YHCT Pro - V48 QR & Header Update</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --song-bg: #fdfbf7;
+            --song-ink: #2c2c2c;
+            --song-wood: #5d4037;
+            --song-accent: #8d6e63;
+        }
+
+        body { 
+            background-color: var(--song-bg); 
+            font-family: 'Noto Sans', sans-serif; 
+            color: var(--song-ink); 
+            padding-bottom: 120px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        input, textarea { -webkit-user-select: text !important; user-select: text !important; }
+
+        h1, h2, h3, .serif { font-family: 'Noto Serif', serif; }
+
+        #mainHeader { 
+            background-color: var(--song-wood); 
+            border-radius: 0 0 24px 24px; min-height: 160px; 
+            display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 4px 15px rgba(93, 64, 55, 0.2);
+            position: relative; overflow: hidden; z-index: 10;
+            background-size: cover;
+            background-position: center;
+            transition: all 0.3s ease;
+        }
+        
+        /* Lớp phủ tối màu cho header */
+        #headerOverlay {
+            position: absolute;
+            inset: 0;
+            background: black;
+            opacity: 0;
+            z-index: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .header-card {
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid #d7ccc8; border-radius: 16px; 
+            padding: 20px 24px; width: 92%; max-width: 800px; 
+            display: flex; justify-content: space-between; align-items: flex-end;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); z-index: 11;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        /* Style cho chế độ header trong suốt (khi có hình nền) */
+        .header-card.transparent-mode {
+            background: rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(2px);
+        }
+        .header-card.transparent-mode h1 { color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .header-card.transparent-mode p { color: #eee !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .header-card.transparent-mode .header-sep { background-color: rgba(255,255,255,0.6) !important; }
+
+        .btn-glass { 
+            background: #fff; border: 1px solid #d7ccc8; color: var(--song-wood); 
+            font-weight: 700; border-radius: 12px; cursor: pointer; transition: 0.1s;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            -webkit-user-select: none; user-select: none;
+        }
+        .btn-glass:active { transform: translateY(1px); background: #efebe9; }
+        
+        .btn-primary { 
+            background: var(--song-wood); color: #fff; border: none; 
+            font-weight: 700; border-radius: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 3px 8px rgba(93, 64, 55, 0.3); 
+            -webkit-user-select: none; user-select: none;
+        }
+        .btn-primary:active { transform: scale(0.98); opacity: 0.95; }
+
+        .song-input { 
+            background: #fff; border: 1px solid #d7ccc8; color: var(--song-ink); 
+            border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 15px; outline: none;
+            transition: all 0.2s;
+            -webkit-user-select: text; user-select: text;
+        }
+        .song-input:focus { border-color: var(--song-wood); background: #fffcf7; }
+        .song-label { font-size: 11px; font-weight: 700; color: #8d6e63; text-transform: uppercase; margin-bottom: 4px; display: block; }
+
+        .patient-row {
+            background: #fff; border: 1px solid #eee; border-radius: 12px; 
+            margin-bottom: 12px; display: flex; overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            position: relative; z-index: 1; min-height: 80px;
+        }
+        .p-info { flex: 1; padding: 14px; cursor: pointer; }
+        .p-actions { display: flex; gap: 1px; z-index: 2; }
+        .act-btn { 
+            width: 55px; border: none; font-size: 10px; font-weight: 800; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%;
+            -webkit-user-select: none; user-select: none;
+        }
+        .act-edit { background: #fafafa; color: #757575; border-left: 1px solid #eee; }
+        .act-exam { background: #e0e5df; color: #2e4a3d; } 
+        .act-del { background: #ffebee; color: #c62828; }
+        .act-del:active { background: #ffcdd2; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(62, 39, 35, 0.6); z-index: 2000; align-items: center; justify-content: center; padding: 10px; backdrop-filter: blur(3px); }
+        .modal.active { display: flex; animation: fadeUp 0.2s; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal-box { 
+            background: #fff; width: 100%; max-width: 650px; 
+            height: 85vh;
+            max-height: 85dvh; 
+            border-radius: 20px; 
+            display: flex; flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25); border: 1px solid #d7ccc8;
+            overflow: hidden;
+        }
+
+        .modal-header { flex-shrink: 0; padding: 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+        
+        .modal-body { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            background: #fff; 
+            -webkit-overflow-scrolling: touch; 
+        }
+
+        .modal-footer {
+            flex-shrink: 0;
+            padding: 16px;
+            padding-bottom: 24px;
+            background: #fff;
+            border-top: 1px solid #eee;
+            display: flex; gap: 10px;
+            z-index: 50;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.03);
+        }
+
+        .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px; background: #fafafa; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        .tab-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #eee; background: #fff; color: #9e9e9e; font-size: 13px; font-weight: 600; white-space: nowrap; -webkit-user-select: none; cursor: pointer; }
+        .tab-btn.active { background: var(--song-wood); color: #fff; border-color: var(--song-wood); }
+
+        /* NUMBER INPUT STYLES */
+        .number-input-container { position: relative; }
+        .number-input-display {
+            width: 100%; padding: 12px; text-align: center; font-size: 18px; font-weight: bold;
+            color: #3e2723; background: #fff; border: 2px solid #d7ccc8; border-radius: 12px; cursor: pointer;
+        }
+        .number-input-display:focus { outline: none; border-color: var(--song-wood); background: #fffcf7; }
+        .number-input-label { font-size: 10px; font-weight: bold; color: #8d6e63; text-transform: uppercase; text-align: center; margin-bottom: 5px; }
+        
+        /* NUMBER PAD MODAL */
+        .number-pad-modal { display: none; position: fixed; inset: 0; background: rgba(62, 39, 35, 0.8); z-index: 3000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
+        .number-pad-modal.active { display: flex; }
+        .number-pad-container { background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); }
+        .number-pad-header { text-align: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 15px; }
+        .number-pad-display { text-align: center; font-size: 32px; font-weight: bold; color: #3e2723; padding: 15px; background: #fafafa; border-radius: 12px; margin-bottom: 20px; min-height: 70px; display: flex; align-items: center; justify-content: center; }
+        .number-pad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .number-pad-btn { height: 60px; background: #fff; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 24px; font-weight: bold; color: #3e2723; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
+        .number-pad-btn:active { background: #f5f5f5; transform: scale(0.95); }
+        .number-pad-btn.delete { background: #ffebee; color: #c62828; border-color: #ffcdd2; }
+        .number-pad-btn.clear { background: #fff3e0; color: #ef6c00; border-color: #ffcc80; }
+        .number-pad-btn.confirm { background: var(--song-wood); color: white; border: none; font-size: 18px; }
+        .number-pad-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+        .number-pad-close { height: 50px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; font-weight: bold; color: #757575; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .med-chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #8d6e63; color: #5d4037; background: #fff; cursor: pointer; white-space: nowrap; margin-right: 6px; margin-bottom: 6px; display: inline-block; -webkit-user-select: none; }
+        .med-chip.active { background: #5d4037; color: white; }
+        .tuchan-chip { padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; border: 1px solid #e0e0e0; color: #666; background: #fafafa; cursor: pointer; white-space: nowrap; margin-right: 6px; margin-bottom: 6px; display: inline-block; -webkit-user-select: none; }
+        .tuchan-chip.active { background: var(--song-wood); color: white; border-color: var(--song-wood); }
+        .tuchan-section { padding: 12px; border-radius: 12px; margin-bottom: 10px; background: #fff; border: 1px solid #eee; }
+        .tuchan-title { font-size: 13px; font-weight: 700; color: #5d4037; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; }
+        .tuchan-title span { background: var(--song-wood); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 6px; }
+
+        .discount-btn { min-width: 70px; padding: 8px 12px; background: #fff9c4; color: #5d4037; border: 2px solid #ffd54f; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .discount-btn:hover { background: #fff59d; transform: translateY(-1px); }
+        
+        .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .backup-card { background: white; border: 2px solid #d7ccc8; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .backup-card:hover { transform: translateY(-2px); border-color: var(--song-wood); box-shadow: 0 5px 15px rgba(93, 64, 55, 0.15); }
+        .backup-icon { font-size: 32px; margin-bottom: 10px; }
+        .backup-title { font-weight: bold; color: var(--song-wood); margin-bottom: 5px; }
+        .backup-desc { font-size: 11px; color: #8d6e63; }
+        
+        .progress-container { width: 100%; background-color: #f0f0f0; border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 20px; background-color: #4caf50; width: 0%; border-radius: 10px; transition: width 0.3s ease; text-align: center; color: white; font-size: 12px; line-height: 20px; font-weight: bold; }
+
+        @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; } #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; } }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-3xl mx-auto">
+        <div id="mainHeader">
+            <div id="headerOverlay"></div>
+            <div id="mainHeaderCard" class="header-card">
+                <div>
+                    <h1 id="displayTitle" class="text-2xl font-bold uppercase text-[#3e2723]">Phòng Khám</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="w-8 h-[2px] bg-[#8d6e63] header-sep"></span>
+                        <p id="displayDoctor" class="serif italic text-sm text-[#5d4037]">Đông Y</p>
+                    </div>
+                </div>
+                <div class="text-right cursor-pointer" onclick="window.handleProfitBoxClick()">
+                    <p id="monthLabel" class="text-[9px] font-bold uppercase text-[#a1887f] mb-1">THÁNG</p>
+                    <div class="bg-[#fafafa] border border-[#eee] px-3 py-1 rounded-lg">
+                        <div id="profitLabel" class="font-mono font-bold text-[#3e2723] text-lg">******</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="menuContainer" class="px-5 mt-6 pb-20">
+            <div class="grid grid-cols-5 gap-3 mb-6">
+                <button type="button" onclick="window.openPatientModal()" class="col-span-2 btn-glass py-4 uppercase text-xs text-[#3e2723]">+ Bệnh nhân</button>
+                <button type="button" onclick="window.openStats()" class="col-span-2 btn-glass py-4 uppercase text-xs text-[#3e2723]">📊 Báo cáo</button>
+                <button type="button" onclick="window.openSettings()" class="btn-glass text-xl text-[#5d4037]">⚙️</button>
+            </div>
+            
+            <div class="relative mb-4">
+                <input type="text" id="search" onkeyup="window.debouncedRender()" placeholder="🔍 Tìm tên hoặc số điện thoại..." class="w-full bg-white border border-[#e0e0e0] rounded-xl py-3 px-4 shadow-sm text-[#3e2723] outline-none focus:border-[#8d6e63]">
+            </div>
+            
+            <div id="list" class="space-y-3 pb-24"></div>
+        </div>
+    </div>
+
+    <div id="vModal" class="modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 class="font-bold text-lg text-[#3e2723] truncate serif">Khám: <span id="vPatientName"></span></h2>
+                <button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" id="tab1" onclick="window.goToStep(1)">1. Chẩn đoán</button>
+                <button class="tab-btn" id="tab2" onclick="window.goToStep(2)">2. Tứ chẩn</button>
+                <button class="tab-btn" id="tab3" onclick="window.goToStep(3)">3. Thủ thuật & Toa thuốc</button>
+                <button class="tab-btn" id="tab4" onclick="window.goToStep(4)">4. Kết thúc</button>
+            </div>
+            
+            <div class="modal-body" id="stepContainer">
+                <input type="hidden" id="vPid"><input type="hidden" id="vVisitId">
+                
+                <div id="step1" class="step-content active space-y-5">
+                    <div><label class="song-label">Ngày khám</label><input type="date" id="vDate" class="song-input"></div>
+                    <div><label class="song-label">Chẩn đoán</label><select id="vDiseaseSelect" onchange="window.loadDiseaseSuggestions()" class="song-input mb-2 font-bold text-[#3e2723]"><option value="">-- Chọn bệnh mẫu --</option></select><input type="text" id="vDiseaseInput" placeholder="Chẩn đoán cụ thể..." class="song-input"></div>
+                    <div id="suggestedSymptomsBox" class="hidden p-3 bg-[#f1f8e9] border border-[#c5e1a5] rounded-lg"><label class="song-label text-[#33691e]">Gợi ý</label><div id="symptomButtons" class="flex flex-wrap gap-1 mt-1"></div></div>
+                    <div><label class="song-label">Triệu chứng & Ghi chú</label><textarea id="vSpecial" rows="3" class="song-input"></textarea></div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="number-input-label">HUYẾT ÁP (mmHg)</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="number-input-container">
+                                    <input type="text" id="vBpSys" class="number-input-display" placeholder="120" readonly onclick="window.openNumberPad('vBpSys', 'Huyết áp tâm thu', '50-250', 120)">
+                                    <div class="text-center text-xs text-gray-500 mt-1">Tâm thu</div>
+                                </div>
+                                <div class="number-input-container">
+                                    <input type="text" id="vBpDia" class="number-input-display" placeholder="80" readonly onclick="window.openNumberPad('vBpDia', 'Huyết áp tâm trương', '30-150', 80)">
+                                    <div class="text-center text-xs text-gray-500 mt-1">Tâm trương</div>
+                                </div>
+                            </div>
+                            <div class="text-center font-bold text-[#3e2723] mt-2" id="displayBP">120/80</div>
+                        </div>
+                        <div>
+                            <div class="number-input-label">MẠCH (lần/phút)</div>
+                            <div class="number-input-container"><input type="text" id="vPulse" class="number-input-display" placeholder="80" readonly onclick="window.openNumberPad('vPulse', 'Mạch', '40-180', 80)"></div>
+                            <div class="text-center font-bold text-[#3e2723] mt-2" id="displayPulse">80</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><div class="number-input-label">CHIỀU CAO (cm)</div><div class="number-input-container"><input type="text" id="vHeight" class="number-input-display" placeholder="165" readonly onclick="window.openNumberPad('vHeight', 'Chiều cao', '100-220', 165)"></div></div>
+                        <div><div class="number-input-label">CÂN NẶNG (kg)</div><div class="number-input-container"><input type="text" id="vWeight" class="number-input-display" placeholder="60" readonly onclick="window.openNumberPad('vWeight', 'Cân nặng', '30-150', 60)"></div></div>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold text-[#3e2723] mt-1"><span id="displayHeightWeight">165cm - 60kg</span><span id="displayBMI">BMI: 22.0</span></div>
+                </div>
+
+                <div id="step2" class="step-content hidden space-y-4">
+                    <div class="tuchan-section"><div class="tuchan-title"><span>1</span> VỌNG (Nhìn)</div><div id="tuchanVongButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVongExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>2</span> VĂN (Nghe, Ngửi)</div><div id="tuchanVanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVanExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>3</span> VẤN (Hỏi)</div><div id="tuchanVanhoiButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVanHoiExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>4</span> THIẾT (Sờ nắn)</div><div id="tuchanThietButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vThietExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>5</span> THIỆT (Lưỡi)</div><div id="tuchanThietchanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vThietChanExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section border-2 border-red-100 bg-red-50"><div class="tuchan-title"><span>6</span> MẠCH</div><div id="tuchanMachchanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vMachChanExtra" class="song-input bg-transparent border-0 border-b border-red-200 rounded-none px-0" placeholder="Mô tả mạch..."></div>
+                </div>
+
+                <div id="step3" class="step-content hidden space-y-6">
+                    <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm"><div class="flex justify-between items-center mb-3"><label class="font-bold text-[#5d4037] serif text-lg">Thủ thuật</label><span class="text-xs text-gray-500">Chọn và giảm giá nếu có</span></div><div id="vProcList" class="space-y-3"></div></div>
+                    <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm"><div class="flex justify-between items-center mb-2"><label class="font-bold text-[#5d4037] serif text-lg">Đông Y (Gam)</label><button onclick="window.addMedRow('east')" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded-full">+ Vị thuốc</button></div><div id="eastPresetsArea" class="mb-3 hidden p-2 bg-[#fdfbf7] rounded border border-dashed border-[#d7ccc8]"><p class="text-[10px] uppercase font-bold text-[#8d6e63] mb-1">Bài thuốc mẫu:</p><div id="eastPresetButtons" class="whitespace-nowrap overflow-x-auto pb-1"></div></div><div id="vMedListEast" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div></div>
+                    <div class="bg-white p-4 border border-blue-200 rounded-xl shadow-sm"><div class="flex justify-between items-center mb-2"><label class="font-bold text-blue-800 serif text-lg">Tây Y (Viên)</label><button onclick="window.addMedRow('west')" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full">+ Thuốc</button></div><div id="vMedListWest" class="space-y-2"></div></div>
+                    <div class="bg-[#efebe9] p-4 rounded-xl border border-[#d7ccc8]"><div class="flex justify-between text-sm mt-1"><span>Tiền thuốc:</span><input type="number" id="displayMedTotalInput" onchange="window.manualUpdateMedTotal()" class="w-28 text-right bg-transparent border-b border-[#5d4037] font-bold outline-none" value="0"></div><div class="flex justify-between text-sm mt-2"><span>Thủ thuật:</span><span id="displayProcTotal" class="font-bold">0đ</span></div><div class="flex justify-between text-xl font-black mt-3 pt-2 border-t border-[#a1887f] text-[#3e2723]"><span>Tổng cộng:</span><span id="displayGrandTotal">0đ</span></div><div class="mt-2"><label class="text-[10px] uppercase font-bold text-gray-500">Vốn:</label><input type="number" id="vCost" class="song-input text-right py-1 h-8" placeholder="0"></div></div>
+                </div>
+
+                <div id="step4" class="step-content hidden space-y-6 text-center">
+                    <div class="bg-[#fffcf7] p-8 rounded-2xl shadow-inner border border-[#d7ccc8]">
+                        <h3 class="font-black text-4xl text-[#3e2723] mb-1" id="finalTotal">0đ</h3>
+                        <p class="text-xs uppercase text-[#8d6e63] font-bold tracking-widest">TỔNG THANH TOÁN</p>
+                        <div class="mt-6 flex flex-col items-center gap-2">
+                            <label class="text-xs font-bold text-[#8d6e63]">Chiết khấu:</label>
+                            <button onclick="window.openNumberPad('vDiscountPercent', 'Chiết khấu (%)', '0-100', 0)" class="discount-btn" id="discountBtn">0% ▼</button>
+                            <input type="hidden" id="vDiscountPercent" value="0">
+                        </div>
+                    </div>
+                    
+                    <div id="qrPaymentSection" class="hidden flex flex-col items-center p-4 border border-[#eee] rounded-xl bg-white">
+                        <p class="text-xs font-bold uppercase text-[#5d4037] mb-2">Quét mã thanh toán</p>
+                        <img id="displayQrPayment" src="" class="w-48 h-48 object-contain border rounded-lg">
+                    </div>
+
+                    <div class="flex items-center justify-center gap-3 p-3 border rounded-xl">
+                        <input type="checkbox" id="vPaid" class="w-5 h-5 accent-[#5d4037]" checked>
+                        <label for="vPaid" class="font-bold text-[#3e2723]">Đã thu tiền</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button onclick="window.prevStep()" id="btnBack" class="flex-1 py-3 btn-glass hidden">Quay lại</button>
+                <button onclick="window.nextStep()" id="btnNext" class="flex-1 py-3 btn-primary uppercase shadow-lg">Tiếp tục</button>
+                <button onclick="window.saveOnly()" id="btnSaveOnly" class="flex-1 py-3 btn-glass text-[#5d4037] hidden font-bold border-2 border-[#d7ccc8]">LƯU</button>
+                <button onclick="window.saveAndPrint()" id="btnPrint" class="flex-1 py-3 btn-primary bg-[#3e2723] hidden shadow-xl border-2 border-[#3e2723]">IN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="pModal" class="modal"><div class="modal-box" style="height:auto; max-height:80vh;"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Hồ Sơ Bệnh Nhân</h2><button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button></div><div class="modal-body"><input type="hidden" id="pEditId"><div class="space-y-4"><div><label class="song-label">Họ Tên *</label><input type="text" id="pName" class="song-input" placeholder="Nhập họ tên"></div><div class="grid grid-cols-2 gap-4"><div><label class="song-label">Năm sinh</label><div class="number-input-container"><input type="text" id="pYear" class="number-input-display" placeholder="1990" readonly onclick="window.openNumberPad('pYear', 'Năm sinh', '1900-2024', 1990)"></div></div><div><label class="song-label">Số điện thoại</label><div class="number-input-container"><input type="text" id="pPhone" class="number-input-display" placeholder="0123456789" readonly onclick="window.openPhonePad()"></div></div></div><div><label class="song-label">Địa chỉ</label><input type="text" id="pAddress" class="song-input" placeholder="Địa chỉ"></div></div></div><div class="modal-footer"><button onclick="window.closeModals()" class="flex-1 py-3 btn-glass">Hủy</button><button onclick="window.savePatient()" class="flex-1 py-3 btn-primary">Lưu Hồ Sơ</button></div></div></div>
+
+    <div id="numberPadModal" class="number-pad-modal"><div class="number-pad-container"><div class="number-pad-header"><h3 id="numberPadTitle" class="font-bold text-lg text-[#3e2723]">Nhập số</h3><p id="numberPadRange" class="text-xs text-gray-500"></p></div><div class="number-pad-display" id="numberPadDisplay">0</div><div class="number-pad-grid"><button class="number-pad-btn" onclick="window.addNumberPadDigit('1')">1</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('2')">2</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('3')">3</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('4')">4</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('5')">5</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('6')">6</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('7')">7</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('8')">8</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('9')">9</button><button class="number-pad-btn clear" onclick="window.clearNumberPad()">C</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('0')">0</button><button class="number-pad-btn delete" onclick="window.deleteNumberPadDigit()">⌫</button></div><div class="number-pad-footer"><button class="number-pad-close" onclick="window.closeNumberPad()">Đóng</button><button class="number-pad-btn confirm" onclick="window.confirmNumberPad()">XONG</button></div></div></div>
+
+    <div id="backupModal" class="modal"><div class="modal-box max-w-2xl"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">🔧 Sao lưu & Khôi phục</h2><button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button></div><div class="modal-body space-y-6"><div class="backup-grid"><div class="backup-card" onclick="window.exportToExcel()"><div class="backup-icon">📊</div><div class="backup-title">Xuất Excel</div><div class="backup-desc">Xuất dữ liệu báo cáo</div></div><div class="backup-card" onclick="window.exportFullDataExcel()"><div class="backup-icon">📁</div><div class="backup-title">Xuất toàn bộ Excel</div><div class="backup-desc">Sao lưu toàn bộ dữ liệu</div></div><div class="backup-card" onclick="window.exportToJSON()"><div class="backup-icon">💾</div><div class="backup-title">Xuất JSON</div><div class="backup-desc">Sao lưu file JSON</div></div><div class="backup-card" onclick="window.importFromJSON()"><div class="backup-icon">🔄</div><div class="backup-title">Nhập JSON</div><div class="backup-desc">Khôi phục từ file backup</div></div></div><div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4"><div class="flex items-center gap-2 mb-2"><span class="text-yellow-600">⚠️</span><h3 class="font-bold text-yellow-700">Lưu ý</h3></div><ul class="text-sm text-yellow-600 space-y-1"><li>• Sao lưu thường xuyên tránh mất dữ liệu</li><li>• Khôi phục JSON sẽ ghi đè dữ liệu hiện tại</li></ul></div></div><div class="modal-footer"><button onclick="window.closeModals()" class="flex-1 py-3 btn-glass">Đóng</button></div></div></div>
+    
+    <div id="importProgressModal" class="modal"><div class="modal-box max-w-md"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Đang xử lý...</h2></div><div class="modal-body space-y-4"><div id="importStatus" class="text-center font-bold text-[#5d4037]">Đang xử lý...</div><div class="progress-container"><div id="importProgressBar" class="progress-bar">0%</div></div><div id="importDetails" class="text-sm text-gray-600 text-center"></div></div></div></div>
+
+    <div id="sModal" class="modal">
+        <div class="modal-box">
+            <div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Thiết lập</h2><button onclick="window.closeModals()" class="text-3xl">&times;</button></div>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="window.switchSettingsTab('tabUI', this)">Giao diện</button>
+                <button class="tab-btn" onclick="window.switchSettingsTab('tabMed', this)">Chuyên môn</button>
+                <button class="tab-btn" onclick="window.switchSettingsTab('tabSec', this)">Bảo mật</button>
+                <button class="tab-btn" onclick="window.switchSettingsTab('tabBackup', this)">Sao lưu</button>
+            </div>
+            <div class="modal-body">
+                <div id="tabUI" class="settings-panel active space-y-4">
+                    <section><label class="song-label">Tên phòng khám</label><input type="text" id="confTitle" class="song-input"></section>
+                    <section><label class="song-label">Bác sĩ phụ trách</label><input type="text" id="confDoctor" class="song-input"></section>
+                    
+                    <div class="p-4 border border-[#d7ccc8] rounded-xl bg-gray-50 space-y-4">
+                        <h3 class="font-bold text-[#5d4037] border-b border-gray-300 pb-2 mb-2">🎨 Tùy chỉnh Giao diện</h3>
+                        
+                        <div>
+                            <label class="song-label">Hình nền Tiêu đề (Header)</label>
+                            <input type="file" id="headerBgInput" accept="image/*" class="text-sm w-full mb-2" onchange="window.handleImageUpload(this, 'headerBgImage', null, true)">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-gray-500">Độ tối nền (Để chữ trắng nổi hơn)</label>
+                                <span id="overlayValueDisplay" class="text-xs font-bold">0%</span>
+                            </div>
+                            <input type="range" id="headerOverlayInput" min="0" max="80" value="0" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-[#5d4037]" oninput="window.updateHeaderOverlay(this.value)">
+                            <button onclick="window.clearHeaderImage()" class="text-xs text-red-600 underline mt-1">Xóa hình nền</button>
+                        </div>
+
+                        <div>
+                            <label class="song-label">Mã QR Ngân hàng (Cho hóa đơn)</label>
+                            <div class="flex gap-4 items-start">
+                                <div class="flex-1">
+                                    <input type="file" id="qrInput" accept="image/*" class="text-sm w-full" onchange="window.handleImageUpload(this, 'qrCodeImage', 'previewQrSettings')">
+                                    <button onclick="window.clearQrImage()" class="text-xs text-red-600 underline mt-2">Xóa mã QR</button>
+                                </div>
+                                <div class="w-20 h-20 border bg-white flex items-center justify-center rounded overflow-hidden">
+                                    <img id="previewQrSettings" src="" class="w-full h-full object-contain" alt="QR">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tabMed" class="settings-panel space-y-6 hidden"><div><h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Danh mục Bệnh</h3><div id="diseaseList" class="space-y-2 mb-3"></div><button onclick="window.addNewDisease()" class="w-full py-3 border border-dashed border-[#bdbdbd] font-bold rounded-xl text-gray-500">+ Thêm Bệnh Mới</button></div><div><h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Dịch vụ</h3><div id="procList" class="space-y-2 mb-3"></div><div class="flex gap-2"><input type="text" id="newProcName" placeholder="Tên DV" class="song-input flex-1"><input type="number" id="newProcPrice" placeholder="Giá" class="song-input w-24"><button onclick="window.addProc()" class="btn-primary px-4 text-sm">Thêm</button></div></div><div><h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Tứ chẩn</h3><div id="tuChanConfigArea" class="space-y-4"><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vọng</h4><div class="flex flex-wrap gap-1 mb-2" id="configVongChips"></div><input type="text" id="newVongChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('vong')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Văn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanChips"></div><input type="text" id="newVanChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('van')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vấn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanhoiChips"></div><input type="text" id="newVanhoiChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('vanhoi')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiết</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietChips"></div><input type="text" id="newThietChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('thiet')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiệt</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietchanChips"></div><input type="text" id="newThietchanChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('thietchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Mạch</h4><div class="flex flex-wrap gap-1 mb-2" id="configMachchanChips"></div><input type="text" id="newMachchanChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('machchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div></div></div></div>
+                <div id="tabSec" class="settings-panel space-y-4 hidden"><section><label class="song-label">Mật khẩu admin</label><div class="flex gap-2"><input type="password" id="confPass" readonly class="song-input w-32 bg-[#f5f5f5] text-center"><button onclick="window.openKeypad('settings')" class="btn-primary px-4 text-xs">Đổi pass</button></div></section></div>
+                <div id="tabBackup" class="settings-panel space-y-4 hidden"><div class="text-center"><button onclick="window.openBackupModal()" class="btn-primary px-6 py-3 text-lg">📂 Mở công cụ Sao lưu</button><p class="text-sm text-gray-500 mt-2">Xuất/nhập dữ liệu</p></div></div>
+            </div>
+            <div class="modal-footer justify-end"><button onclick="window.saveSettings()" class="btn-primary px-6">Lưu Cấu Hình</button></div>
+        </div>
+    </div>
+    
+    <div id="dDetailModal" class="modal"><div class="modal-box"><div class="modal-header"><h3 class="font-bold text-[#3e2723]">Chi tiết Bệnh</h3><button onclick="document.getElementById('dDetailModal').classList.remove('active')" class="text-2xl">&times;</button></div><div class="modal-body space-y-4"><div><label class="song-label">Tên bệnh</label><input type="text" id="dEditName" class="song-input font-bold text-lg"></div><div><label class="song-label">Triệu chứng gợi ý</label><textarea id="dEditSym" rows="2" class="song-input"></textarea></div><div class="bg-[#fdfbf7] border rounded-xl p-4"><div class="flex justify-between items-center mb-3"><label class="song-label text-[#5d4037]">Bài thuốc Đông Y</label><button onclick="window.addNewFormulaToDisease()" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded">+ Tạo bài mới</button></div><div id="dFormulaList" class="space-y-2"></div></div><div class="bg-[#f0f9ff] border border-blue-100 rounded-xl p-4"><div class="flex justify-between items-center mb-2"><label class="song-label text-blue-800">Toa mẫu Tây Y</label><button onclick="window.addMedToSample('west')" class="text-[10px] bg-blue-600 text-white px-2 py-1 rounded">+ Thuốc</button></div><div id="dSampleListWest" class="space-y-2"></div></div></div><div class="modal-footer justify-end"><button onclick="window.saveDiseaseDetail()" class="btn-primary px-6">Lưu</button></div></div></div>
+    <div id="formulaEditModal" class="modal"><div class="modal-box" style="height:auto; max-height:80vh;"><div class="modal-header"><h3 class="font-bold text-[#3e2723]">Soạn thảo Bài thuốc</h3><button onclick="document.getElementById('formulaEditModal').classList.remove('active')" class="text-2xl">&times;</button></div><div class="modal-body space-y-4"><input type="hidden" id="feIndex"><div><label class="song-label">Tên bài thuốc</label><input type="text" id="feName" class="song-input font-bold"></div><div class="bg-white border p-3 rounded-xl"><div class="flex justify-between mb-2"><label class="song-label">Thành phần</label><button onclick="window.addIngredientToFormula()" class="text-[10px] bg-[#8d6e63] text-white px-2 py-1 rounded">+ Thêm vị</button></div><div id="feIngredientList" class="space-y-2 max-h-60 overflow-y-auto"></div></div></div><div class="modal-footer justify-end"><button onclick="window.saveFormula()" class="btn-primary px-6">Xác nhận</button></div></div></div>
+    <div id="keypadModal" class="modal"><div class="modal-box w-80 h-auto"><div class="modal-body p-6 flex flex-col items-center"><h3 class="font-bold mb-4" id="keypadTitle">Mật khẩu</h3><div class="flex gap-2 mb-4" id="dotsArea"><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div></div><div class="grid grid-cols-3 gap-3 w-full"><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('1')">1</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('2')">2</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('3')">3</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('4')">4</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('5')">5</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('6')">6</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('7')">7</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('8')">8</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('9')">9</button><div></div><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('0')">0</button><button class="h-14 text-red-500 font-bold" onclick="window.removeDigit()">⌫</button></div><button onclick="window.closeKeypad()" class="mt-4 text-gray-400 font-bold text-sm">Đóng</button></div></div></div>
+    <div id="analyticsModal" class="modal"><div class="modal-box max-w-5xl"><div class="modal-header"><h2 class="font-bold text-xl uppercase">Thống Kê & Báo Cáo</h2><button onclick="window.closeModals()" class="text-2xl">&times;</button></div><div class="modal-body"><div class="flex gap-3 mb-4"><select id="anaTimeFilter" onchange="window.renderAnalytics()" class="song-input w-40"><option value="today">Hôm nay</option><option value="month" selected>Tháng này</option><option value="all">Tất cả</option></select><button onclick="window.exportToExcel()" class="btn-glass text-green-700 border-green-200 px-4">📊 Xuất Excel</button><button onclick="window.openBackupModal()" class="btn-primary px-4">💾 Sao lưu Dữ liệu</button></div><div class="h-64 mb-4 border rounded-xl p-2"><canvas id="analyticsChart"></canvas></div><table class="w-full text-sm"><thead><tr class="bg-gray-50 text-left"><th class="p-2">Ngày</th><th class="p-2">Tên</th><th class="p-2">Bệnh</th><th class="p-2 text-right">Thu</th><th class="p-2 text-right">Lãi</th></tr></thead><tbody id="anaTableBody"></tbody></table></div></div></div>
+    <div id="hModal" class="modal"><div class="modal-box max-w-2xl"><div class="modal-header"><h2 class="font-bold text-xl serif">Lịch sử: <span id="hName"></span></h2><button onclick="window.closeModals()" class="text-3xl">&times;</button></div><div id="hContent" class="modal-body space-y-3"></div></div></div>
+
+    <div id="printArea" class="hidden">
+        <div class="text-center border-b border-dashed border-black pb-2 mb-2">
+            <h2 class="text-base font-bold uppercase" id="prTitle">PHÒNG KHÁM</h2>
+            <p class="text-[10px]" id="prDoc">BS.</p>
+            <p class="text-xs font-bold mt-1">ĐƠN THUỐC & HÓA ĐƠN</p>
+            <p class="text-[10px]" id="prDate"></p>
+        </div>
+        <div class="text-[11px] mb-2">
+            <p><b>BN:</b> <span id="prName"></span> <span id="prYear"></span></p>
+            <p><b>Chẩn đoán:</b> <span id="prDis"></span></p>
+            <p><b>Triệu chứng/Ghi chú:</b> <span id="prSym"></span></p>
+        </div>
+        <table class="w-full text-[11px] border-collapse mb-2">
+            <thead><tr class="border-b border-black"><th class="text-left">Nội dung</th><th class="text-right">Tiền</th></tr></thead>
+            <tbody id="prTable"></tbody>
+        </table>
+        <div class="text-right text-xs">
+            <p>Tổng: <b id="prTotal"></b></p>
+            <p id="prDiscText" class="italic text-[10px]"></p>
+            <p class="mt-1">Thanh toán: <b id="prFinal"></b></p>
+        </div>
+        
+        <div id="prQrContainer" class="text-center mt-3 hidden">
+            <p class="text-[9px] italic mb-1">Quét mã thanh toán:</p>
+            <img id="prQr" src="" class="w-24 h-24 object-contain inline-block border border-gray-300">
+        </div>
+        
+        <p class="text-center text-[10px] italic mt-4">Cảm ơn và chúc sức khỏe!</p>
+    </div>
+
+    <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="window.handleJSONFileSelect(event)">
+
+    <script>
+        // --- INIT ---
+        try { window.db = JSON.parse(localStorage.getItem('yhct_db_v48') || '[]'); } catch(e) { window.db = []; }
+        try { 
+            window.config = JSON.parse(localStorage.getItem('yhct_cfg_v48')) || {}; 
+            // Default config values
+            if(!window.config.clinicTitle) window.config.clinicTitle = 'Phòng Khám YHCT';
+            if(!window.config.diseases) window.config.diseases = [];
+            if(!window.config.procs) window.config.procs = [];
+            if(!window.config.tuChan) window.config.tuChan = {
+                vong: ['Sắc mặt hồng nhuận', 'Sắc mặt xanh tái', 'Sắc mặt vàng', 'Sắc mặt đỏ', 'Sắc mặt nhợt', 'Lưỡi to bệu', 'Rêu trắng', 'Rêu vàng'],
+                van: ['Tiếng nói nhỏ yếu', 'Tiếng nói lớn mạnh', 'Hơi thở hôi', 'Ho khan', 'Ho đờm'],
+                vanhoi: ['Ăn kém', 'Ăn ngon', 'Khát', 'Không khát', 'Đại tiện táo', 'Đại tiện lỏng', 'Ngủ kém', 'Đau đầu', 'Đau lưng'],
+                thiet: ['Da nóng', 'Da lạnh', 'Bụng mềm', 'Bụng cứng', 'Đau cự án', 'Đau thiện án'],
+                thietchan: ['Lưỡi đỏ', 'Lưỡi nhợt', 'Rêu mỏng', 'Rêu dày', 'Rêu nhớt'],
+                machchan: ['Phù', 'Trầm', 'Trì', 'Sác', 'Hoạt', 'Huyền', 'Tế', 'Nhược']
+            };
+            // New config for Header & QR
+            if(window.config.headerOverlayOpacity === undefined) window.config.headerOverlayOpacity = 0;
+            if(!window.config.headerBgImage) window.config.headerBgImage = null;
+            if(!window.config.qrCodeImage) window.config.qrCodeImage = null;
+
+            if(Array.isArray(window.config.diseases)) {
+                window.config.diseases.forEach(d => {
+                    if (d && !d.eastOptions) {
+                        d.eastOptions = [];
+                        if (d.rxEast && d.rxEast.length > 0) d.eastOptions.push({ name: "Bài thuốc cơ bản", ingredients: d.rxEast });
+                    }
+                });
+            }
+        } catch(e) { 
+            window.config = { clinicTitle: 'Phòng Khám YHCT', diseases: [], procs: [], tuChan: {} }; 
+        }
+
+        let currentVisit = { step: 1, rxEast: [], rxWest: [], totalProc: 0, manualMedTotal: 0, tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} };
+        let tempDiseaseId = null, tempFormulaIndex = null, chartInstance = null, tempPassInput = "", keypadMode = "unlock", currentFilteredVisits = [];
+        let numberPadValue = "", currentNumberInput = null;
+        let numberPadConfig = { min: 0, max: 9999, defaultValue: 0, isPhone: false };
+
+        window.onload = function() { 
+            window.render(); 
+            window.updateHeader(); 
+            window.initDefaultValues();
+            window.checkFirstTimeUse();
+        };
+        
+        window.saveDb = function() { try { localStorage.setItem('yhct_db_v48', JSON.stringify(window.db)); } catch(e) { alert("Bộ nhớ đầy!"); } }
+        window.saveConfig = function() { localStorage.setItem('yhct_cfg_v48', JSON.stringify(window.config)); window.updateHeader(); }
+        
+        // --- HEADER & QR FUNCTIONS ---
+        window.updateHeader = function() { 
+            document.getElementById('displayTitle').innerText = window.config.clinicTitle; 
+            document.getElementById('displayDoctor').innerText = window.config.doctorName ? window.config.doctorName : 'Đông Y'; 
+            window.updateProfitDisplay();
+            
+            // Apply Background & Overlay
+            const header = document.getElementById('mainHeader');
+            const overlay = document.getElementById('headerOverlay');
+            const card = document.getElementById('mainHeaderCard');
+            
+            if (window.config.headerBgImage) {
+                header.style.backgroundImage = `url(${window.config.headerBgImage})`;
+                overlay.style.opacity = (window.config.headerOverlayOpacity || 0) / 100;
+                // Switch to transparent mode
+                card.classList.add('transparent-mode');
+            } else {
+                header.style.backgroundImage = 'none';
+                overlay.style.opacity = 0;
+                card.classList.remove('transparent-mode');
+            }
+        }
+
+        window.handleImageUpload = function(input, configKey, previewId, isHeader = false) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // Check file size (approx 2MB limit for base64 safety in localStorage)
+            if (file.size > 2000000) {
+                alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB.");
+                input.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                window.config[configKey] = e.target.result;
+                if (previewId) {
+                    document.getElementById(previewId).src = e.target.result;
+                }
+                if (isHeader) {
+                    window.updateHeader();
+                }
+                window.saveConfig();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.updateHeaderOverlay = function(value) {
+            window.config.headerOverlayOpacity = value;
+            document.getElementById('overlayValueDisplay').innerText = value + '%';
+            document.getElementById('headerOverlay').style.opacity = value / 100;
+            // No saveConfig here to avoid spamming write, save on modal close or specific save button
+        }
+        
+        window.clearHeaderImage = function() {
+            window.config.headerBgImage = null;
+            document.getElementById('headerBgInput').value = "";
+            window.updateHeader();
+            window.saveConfig();
+        }
+
+        window.clearQrImage = function() {
+            window.config.qrCodeImage = null;
+            document.getElementById('qrInput').value = "";
+            document.getElementById('previewQrSettings').src = "";
+            window.saveConfig();
+        }
+
+        // --- BACKUP & RESTORE ---
+        window.openBackupModal = function() { document.getElementById('backupModal').classList.add('active'); };
+        window.exportToJSON = function() {
+            const blob = new Blob([JSON.stringify({db: window.db, config: window.config}, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_yhct_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        };
+        window.importFromJSON = function() { document.getElementById('jsonFileInput').click(); };
+        window.handleJSONFileSelect = function(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (data.db && data.config) {
+                        if(confirm('Dữ liệu hiện tại sẽ bị ghi đè. Tiếp tục?')) {
+                            window.db = data.db; window.config = data.config;
+                            window.saveDb(); window.saveConfig();
+                            alert('Khôi phục thành công! Trang sẽ tải lại.');
+                            location.reload();
+                        }
+                    } else alert('File không hợp lệ');
+                } catch(err) { alert('Lỗi đọc file: ' + err.message); }
+            };
+            reader.readAsText(file); e.target.value = '';
+        };
+
+        // --- EXCEL ---
+        window.exportToExcel = function() {
+            if(!currentFilteredVisits.length) return alert("Không có dữ liệu");
+            const data = currentFilteredVisits.map((v, i) => ({
+                "STT": i+1, "Ngày": v.date, "Tên": v.pName, "Bệnh": v.disease,
+                "Thuốc Đông Y": v.rxEast?.map(m=>`${m.name}(${m.qty}g)`).join(', ')||'',
+                "Thuốc Tây Y": v.rxWest?.map(m=>`${m.name}(${m.qty}v)`).join(', ')||'',
+                "Tổng thu": v.total, "Lãi": v.total-(v.cost||0)
+            }));
+            const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Báo cáo");
+            XLSX.writeFile(wb, `BaoCao_${new Date().toISOString().split('T')[0]}.xlsx`);
+        };
+        window.exportFullDataExcel = function() {
+            // Logic tương tự như bản gốc, rút gọn cho gọn code
+            const wb = XLSX.utils.book_new();
+            const pData = window.db.map((p,i)=>({"ID":p.id,"Tên":p.name,"SĐT":p.phone}));
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pData), "BenhNhan");
+            XLSX.writeFile(wb, `FullData_${new Date().toISOString().split('T')[0]}.xlsx`);
+        };
+
+        // --- FIRST TIME ---
+        window.checkFirstTimeUse = function() {
+            if (!localStorage.getItem('yhct_first_time')) {
+                window.createSampleData(); localStorage.setItem('yhct_first_time', 'false');
+            }
+        };
+        window.createSampleData = function() {
+            if (window.config.diseases.length===0) window.config.diseases = [{name:"Cảm mạo",sym:"Sốt, sợ lạnh",rxWest:[],eastOptions:[]}];
+            if (window.config.procs.length===0) window.config.procs = [{name:"Châm cứu",price:100000}];
+            if (window.db.length===0) window.db = [{id:"1",name:"Nguyễn Văn A",year:"1990",phone:"0909000111",visits:[]}];
+            window.saveDb(); window.saveConfig();
+        };
+
+        // --- NUMBER PAD ---
+        window.openNumberPad = function(id,title,range,def) {
+            currentNumberInput = id; numberPadConfig.isPhone = false; numberPadValue = (document.getElementById(id).value||def).toString();
+            document.getElementById('numberPadTitle').innerText = title; 
+            document.getElementById('numberPadDisplay').innerText = numberPadValue;
+            document.getElementById('numberPadModal').classList.add('active');
+            if(range && range.includes('-')) {
+                const [min,max] = range.split('-'); numberPadConfig.min = parseInt(min); numberPadConfig.max = parseInt(max);
+            }
+        };
+        window.openPhonePad = function() {
+            currentNumberInput = 'pPhone'; numberPadConfig.isPhone = true; numberPadValue = document.getElementById('pPhone').value;
+            document.getElementById('numberPadTitle').innerText = 'Số điện thoại';
+            document.getElementById('numberPadDisplay').innerText = numberPadValue || "";
+            document.getElementById('numberPadModal').classList.add('active');
+        };
+        window.addNumberPadDigit = function(d) {
+            if(numberPadConfig.isPhone) { if(numberPadValue.length<15) numberPadValue+=d; }
+            else { if(numberPadValue==="0") numberPadValue=d; else { const n = parseInt(numberPadValue+d); if(n<=numberPadConfig.max) numberPadValue+=d; } }
+            document.getElementById('numberPadDisplay').innerText = numberPadValue;
+        };
+        window.deleteNumberPadDigit = function() { numberPadValue = numberPadValue.slice(0,-1); document.getElementById('numberPadDisplay').innerText = numberPadValue||"0"; };
+        window.clearNumberPad = function() { numberPadValue = ""; document.getElementById('numberPadDisplay').innerText = "0"; };
+        window.closeNumberPad = function() { document.getElementById('numberPadModal').classList.remove('active'); };
+        window.confirmNumberPad = function() {
+            if(currentNumberInput) {
+                document.getElementById(currentNumberInput).value = numberPadValue;
+                if(currentNumberInput.startsWith('vBp')) window.updateBpDisplay();
+                else if(currentNumberInput==='vPulse') document.getElementById('displayPulse').innerText = numberPadValue;
+                else if(currentNumberInput==='vHeight'||currentNumberInput==='vWeight') window.updateHeightWeightDisplay();
+                else if(currentNumberInput==='vDiscountPercent') {
+                    document.getElementById('discountBtn').innerText = numberPadValue + "% ▼"; window.calcTotal();
+                }
+                else if(currentNumberInput.startsWith('proc_disc_')) {
+                    const idx = currentNumberInput.split('_')[2];
+                    document.getElementById(`proc_disp_${idx}`).innerText = numberPadValue + "%";
+                    window.calcTotal();
+                }
+            }
+            window.closeNumberPad();
+        };
+        
+        window.updateBpDisplay = function() { document.getElementById('displayBP').innerText = (document.getElementById('vBpSys').value||120)+'/'+(document.getElementById('vBpDia').value||80); };
+        window.updateHeightWeightDisplay = function() {
+            const h = document.getElementById('vHeight').value, w = document.getElementById('vWeight').value;
+            document.getElementById('displayHeightWeight').innerText = `${h}cm - ${w}kg`;
+            if(h>0 && w>0) document.getElementById('displayBMI').innerText = 'BMI: ' + (w/((h/100)*(h/100))).toFixed(1);
+        };
+        window.initDefaultValues = function() {
+            if(!document.getElementById('vBpSys').value) {
+                document.getElementById('vBpSys').value=120; document.getElementById('vBpDia').value=80;
+                document.getElementById('vPulse').value=80; document.getElementById('vHeight').value=165; document.getElementById('vWeight').value=60;
+            }
+        };
+
+        // --- PATIENT & LIST ---
+        window.debouncedRender = function() { clearTimeout(searchTimeout); searchTimeout = setTimeout(window.render, 250); };
+        window.render = function() {
+            const list = document.getElementById('list'), kw = document.getElementById('search').value.toLowerCase();
+            list.innerHTML = window.db.map(p => {
+                if(p.name.toLowerCase().includes(kw) || (p.phone && p.phone.includes(kw))) {
+                    return `<div class="patient-row"><div class="p-info" onclick="window.viewHistory('${p.id}')"><h3 class="font-bold text-lg text-[#3e2723]">${p.name}</h3><p class="text-xs text-[#8d6e63]">${p.year?'SN '+p.year:''} ${p.phone?'• '+p.phone:''}</p></div><div class="p-actions"><button onclick="window.handleEdit('${p.id}',event)" class="act-btn act-edit">SỬA</button><button onclick="window.handleExam('${p.id}',event)" class="act-btn act-exam">KHÁM</button><button onclick="window.handleDelete('${p.id}')" class="act-btn act-del">XÓA</button></div></div>`;
+                } return '';
+            }).join('');
+            document.getElementById('monthLabel').innerText = `T${new Date().getMonth()+1}`;
+            window.updateProfitDisplay();
+        };
+        window.handleEdit = function(id,e) { e.stopPropagation(); window.openPatientModal(id); };
+        window.handleExam = function(id,e) { e.stopPropagation(); window.startVisit(id); };
+        window.handleDelete = function(id) { if(confirm('Xóa?')) { window.db = window.db.filter(x=>String(x.id)!==String(id)); window.saveDb(); window.render(); } };
+        window.openPatientModal = function(id=null) {
+            document.getElementById('pEditId').value = id||'';
+            if(id) { const p = window.db.find(x=>x.id==id); document.getElementById('pName').value=p.name; document.getElementById('pYear').value=p.year; document.getElementById('pPhone').value=p.phone; document.getElementById('pAddress').value=p.address; }
+            else { document.getElementById('pName').value=''; document.getElementById('pYear').value=''; document.getElementById('pPhone').value=''; document.getElementById('pAddress').value=''; }
+            document.getElementById('pModal').classList.add('active');
+        };
+        window.savePatient = function() {
+            const name = document.getElementById('pName').value; if(!name) return alert("Nhập tên!");
+            const id = document.getElementById('pEditId').value, p = { id: id||Date.now().toString(), name: name, year: document.getElementById('pYear').value, phone: document.getElementById('pPhone').value, address: document.getElementById('pAddress').value, visits: id?window.db.find(x=>x.id==id).visits:[] };
+            if(id) window.db[window.db.findIndex(x=>x.id==id)] = p; else window.db.unshift(p);
+            window.saveDb(); window.closeModals(); window.render();
+        };
+
+        // --- VISIT ---
+        window.startVisit = function(pid, vid=null) {
+            const p = window.db.find(x=>x.id==pid); if(!p) return;
+            document.getElementById('vPid').value = pid; document.getElementById('vVisitId').value = vid||'';
+            document.getElementById('vPatientName').innerText = p.name;
+            currentVisit = { step: 1, rxEast: [], rxWest: [], totalProc: 0, manualMedTotal: 0, tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} };
+            // Reset fields
+            document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('vDiseaseInput').value = ''; document.getElementById('vSpecial').value = '';
+            document.getElementById('vCost').value = 0; document.getElementById('vDiscountPercent').value = 0;
+            document.getElementById('discountBtn').innerText = '0% ▼';
+            // Render basic UI
+            document.getElementById('vDiseaseSelect').innerHTML = '<option value="">-- Chọn bệnh mẫu --</option>' + window.config.diseases.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
+            window.renderProcList(); window.renderMedList('east'); window.renderMedList('west');
+            // Populate if edit
+            if(vid) {
+                const v = p.visits.find(x=>x.id==vid);
+                if(v) {
+                    document.getElementById('vDate').value = v.date; document.getElementById('vDiseaseInput').value = v.disease;
+                    document.getElementById('vSpecial').value = v.symptoms; document.getElementById('vCost').value = v.cost;
+                    document.getElementById('vDiscountPercent').value = v.disc||0; document.getElementById('discountBtn').innerText = (v.disc||0)+'% ▼';
+                    if(v.tuChan) currentVisit.tuChan = v.tuChan;
+                    if(v.vong) document.getElementById('vVongExtra').value = v.vong;
+                    currentVisit.rxEast = JSON.parse(JSON.stringify(v.rxEast)); currentVisit.rxWest = JSON.parse(JSON.stringify(v.rxWest));
+                    currentVisit.manualMedTotal = v.medPrice;
+                    document.getElementById('displayMedTotalInput').value = v.medPrice;
+                    window.renderMedList('east'); window.renderMedList('west'); window.calcTotal();
+                }
+            }
+            window.goToStep(1); document.getElementById('vModal').classList.add('active');
+        };
+
+        window.loadDiseaseSuggestions = function() {
+            const dName = document.getElementById('vDiseaseSelect').value;
+            const box = document.getElementById('suggestedSymptomsBox'), preArea = document.getElementById('eastPresetsArea');
+            if(!dName) { box.classList.add('hidden'); preArea.classList.add('hidden'); return; }
+            const d = window.config.diseases.find(x=>x.name===dName);
+            if(d) {
+                if(d.sym) { box.classList.remove('hidden'); document.getElementById('symptomButtons').innerHTML = d.sym.split(',').map(s=>`<span onclick="document.getElementById('vSpecial').value+=(document.getElementById('vSpecial').value?', ':'')+'${s.trim()}'" class="med-chip">${s.trim()}</span>`).join(''); }
+                else box.classList.add('hidden');
+                currentVisit.rxWest = JSON.parse(JSON.stringify(d.rxWest||[])); window.renderMedList('west');
+                if(d.eastOptions?.length) { preArea.classList.remove('hidden'); document.getElementById('eastPresetButtons').innerHTML = d.eastOptions.map((o,i)=>`<div class="med-chip" onclick="window.applyEasternSample(${i})">${o.name}</div>`).join(''); }
+                else preArea.classList.add('hidden');
+                window.calcTotal();
+            }
+        };
+        window.applyEasternSample = function(i) {
+            const d = window.config.diseases.find(x=>x.name===document.getElementById('vDiseaseSelect').value);
+            if(d && d.eastOptions[i]) { currentVisit.rxEast = JSON.parse(JSON.stringify(d.eastOptions[i].ingredients)); window.renderMedList('east'); window.autoCalcMedTotal(); }
+        };
+        window.renderMedList = function(type) {
+            const list = document.getElementById(type==='east'?'vMedListEast':'vMedListWest');
+            const data = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
+            list.innerHTML = data.map((m,i)=>`<div class="flex gap-2 items-center mb-2"><input type="text" value="${m.name}" onchange="window.updateMed('${type}',${i},'name',this.value)" class="flex-grow text-sm font-bold p-2 border-b song-input" placeholder="Tên"><input type="number" value="${m.qty}" onchange="window.updateMed('${type}',${i},'qty',this.value)" class="w-16 text-center text-sm p-2 border rounded song-input"><span class="text-xs text-gray-500">${type==='east'?'g':'v'}</span><input type="number" value="${m.price||0}" onchange="window.updateMed('${type}',${i},'price',this.value)" class="w-20 text-right text-xs p-2 border rounded song-input"><button onclick="window.removeMed('${type}',${i})" class="text-red-400 font-bold px-2">×</button></div>`).join('');
+        };
+        window.addMedRow = function(type) { (type==='east'?currentVisit.rxEast:currentVisit.rxWest).push({name:"",qty:1,price:0}); window.renderMedList(type); };
+        window.updateMed = function(type,i,f,v) { (type==='east'?currentVisit.rxEast:currentVisit.rxWest)[i][f] = (f==='qty'||f==='price')?parseFloat(v):v; window.autoCalcMedTotal(); };
+        window.removeMed = function(type,i) { (type==='east'?currentVisit.rxEast:currentVisit.rxWest).splice(i,1); window.renderMedList(type); window.autoCalcMedTotal(); };
+        window.autoCalcMedTotal = function() {
+            let t = 0;
+            currentVisit.rxEast.forEach(m=>t+=(m.qty||0)*(m.price||0));
+            currentVisit.rxWest.forEach(m=>t+=(m.qty||0)*(m.price||0));
+            document.getElementById('displayMedTotalInput').value = t; currentVisit.manualMedTotal = t; window.calcTotal();
+        };
+        window.manualUpdateMedTotal = function() { currentVisit.manualMedTotal = parseFloat(document.getElementById('displayMedTotalInput').value)||0; window.calcTotal(); };
+        window.calcTotal = function() {
+            let pt = 0;
+            window.config.procs.forEach((p,i) => {
+                const cb = document.getElementById(`proc_${i}`);
+                if(cb && cb.checked) {
+                    const disc = parseInt(document.getElementById(`proc_disc_${i}`).value)||0;
+                    pt += Math.round(p.price * (1 - disc/100));
+                }
+            });
+            currentVisit.totalProc = pt;
+            document.getElementById('displayProcTotal').innerText = pt.toLocaleString()+'đ';
+            const gt = currentVisit.manualMedTotal + pt;
+            document.getElementById('displayGrandTotal').innerText = gt.toLocaleString()+'đ';
+            const discP = parseInt(document.getElementById('vDiscountPercent').value)||0;
+            document.getElementById('finalTotal').innerText = Math.round(gt*(1-discP/100)).toLocaleString()+'đ';
+        };
+
+        window.renderProcList = function() {
+            document.getElementById('vProcList').innerHTML = window.config.procs.map((p,i)=>`
+                <div class="flex items-center justify-between p-4 border rounded-xl bg-white mb-2 shadow-sm">
+                    <div class="flex items-center gap-3"><input type="checkbox" id="proc_${i}" class="w-5 h-5 accent-[#5d4037]" onchange="window.calcTotal()"><div><label for="proc_${i}" class="text-sm font-bold text-[#3e2723]">${p.name}</label><div class="text-xs text-gray-500">${p.price.toLocaleString()}đ</div></div></div>
+                    <div class="flex items-center gap-2"><span class="text-xs text-gray-500">Giảm:</span><button id="proc_disp_${i}" onclick="window.openNumberPad('proc_disc_${i}', 'Giảm giá (%)', '0-100', 0)" class="discount-btn">0%</button><input type="hidden" id="proc_disc_${i}" value="0"></div>
+                </div>`).join('');
+        };
+
+        // --- NAVIGATION & TỨ CHẨN ---
+        window.renderTuchanChips = function() {
+            ['vong','van','vanhoi','thiet','thietchan','machchan'].forEach(sec => {
+                const c = document.getElementById(`tuchan${sec.charAt(0).toUpperCase()+sec.slice(1)}Buttons`);
+                if(c) c.innerHTML = (window.config.tuChan[sec]||[]).map(t=>`<div class="tuchan-chip" onclick="window.toggleTuchanChip('${sec}','${t.replace(/'/g,"\\'")}')">${t}</div>`).join('');
+            });
+        };
+        window.toggleTuchanChip = function(sec,t) {
+            const idx = currentVisit.tuChan[sec].indexOf(t);
+            const chips = document.querySelectorAll(`#tuchan${sec.charAt(0).toUpperCase()+sec.slice(1)}Buttons .tuchan-chip`);
+            chips.forEach(c => {
+                if(c.innerText===t) {
+                    if(idx===-1) { c.classList.add('active'); currentVisit.tuChan[sec].push(t); }
+                    else { c.classList.remove('active'); currentVisit.tuChan[sec].splice(idx,1); }
+                }
+            });
+        };
+        window.goToStep = function(s) {
+            currentVisit.step = s;
+            document.querySelectorAll('.step-content').forEach(e => { e.classList.remove('active'); e.classList.add('hidden'); });
+            document.getElementById('step'+s).classList.remove('hidden'); document.getElementById('step'+s).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i+1===s));
+            document.getElementById('btnBack').classList.toggle('hidden', s===1);
+            document.getElementById('btnNext').classList.toggle('hidden', s===4);
+            document.getElementById('btnSaveOnly').classList.toggle('hidden', s!==4);
+            document.getElementById('btnPrint').classList.toggle('hidden', s!==4);
+            if(s===1) window.renderTuchanChips();
+            if(s===3||s===4) window.calcTotal();
+            
+            // Show QR in step 4 if available
+            if(s===4) {
+                const qrSection = document.getElementById('qrPaymentSection');
+                const qrImg = document.getElementById('displayQrPayment');
+                if(window.config.qrCodeImage) {
+                    qrSection.classList.remove('hidden');
+                    qrImg.src = window.config.qrCodeImage;
+                } else {
+                    qrSection.classList.add('hidden');
+                }
+            }
+        };
+        window.nextStep = function() { if(currentVisit.step<4) window.goToStep(currentVisit.step+1); };
+        window.prevStep = function() { if(currentVisit.step>1) window.goToStep(currentVisit.step-1); };
+
+        // --- SAVE & PRINT ---
+        window.saveOnly = function() { window.processSave(false); };
+        window.saveAndPrint = function() { window.processSave(true); };
+        window.processSave = function(print) {
+            try {
+                const pid = document.getElementById('vPid').value; if(!pid) throw new Error("Mất kết nối bệnh nhân");
+                const procs = []; 
+                window.config.procs.forEach((p,i)=>{ const cb=document.getElementById(`proc_${i}`); if(cb&&cb.checked) { const d=parseInt(document.getElementById(`proc_disc_${i}`).value)||0; procs.push(`${p.name} (Giảm ${d}%)`); } });
+                
+                const visit = {
+                    id: parseInt(document.getElementById('vVisitId').value)||Date.now(),
+                    date: document.getElementById('vDate').value,
+                    disease: document.getElementById('vDiseaseSelect').value||document.getElementById('vDiseaseInput').value,
+                    symptoms: document.getElementById('vSpecial').value,
+                    tuChan: currentVisit.tuChan,
+                    vong: document.getElementById('vVongExtra').value,
+                    rxEast: currentVisit.rxEast, rxWest: currentVisit.rxWest,
+                    medPrice: currentVisit.manualMedTotal, procTotal: currentVisit.totalProc, procs: procs.join(', '),
+                    total: parseInt(document.getElementById('finalTotal').innerText.replace(/[^\d]/g,'')),
+                    cost: parseInt(document.getElementById('vCost').value)||0,
+                    disc: parseInt(document.getElementById('vDiscountPercent').value)||0,
+                    paid: document.getElementById('vPaid').checked
+                };
+                
+                const pIdx = window.db.findIndex(x=>String(x.id)===String(pid));
+                if(pIdx>-1) {
+                    if(!window.db[pIdx].visits) window.db[pIdx].visits=[];
+                    const vIdx = window.db[pIdx].visits.findIndex(v=>v.id===visit.id);
+                    if(vIdx>-1) window.db[pIdx].visits[vIdx]=visit; else window.db[pIdx].visits.unshift(visit);
+                    window.saveDb();
+                    if(print) window.printInvoice(window.db[pIdx], visit); else alert("Đã lưu!");
+                    window.closeModals(); window.render();
+                }
+            } catch(e) { alert("Lỗi: "+e.message); }
+        };
+        
+        window.printInvoice = function(p,v) {
+            document.getElementById('prTitle').innerText = window.config.clinicTitle;
+            document.getElementById('prDoc').innerText = 'BS. ' + (window.config.doctorName||'Đông Y');
+            document.getElementById('prDate').innerText = 'Ngày: ' + v.date.split('-').reverse().join('/');
+            document.getElementById('prName').innerText = p.name; document.getElementById('prYear').innerText = p.year?`(${p.year})`:'';
+            document.getElementById('prDis').innerText = v.disease;
+            document.getElementById('prSym').innerText = v.symptoms||'';
+            
+            let html = '';
+            if(v.procs) html += `<tr><td colspan="2" style="font-weight:bold;font-style:italic">Thủ thuật: ${v.procs}</td></tr>`;
+            if(v.rxEast?.length) { html+=`<tr><td colspan="2" style="font-weight:bold;padding-top:4px">Đông Y:</td></tr>`; v.rxEast.forEach(m=>html+=`<tr><td>- ${m.name} (${m.qty}g)</td><td class="text-right">${(m.qty*m.price).toLocaleString()}</td></tr>`); }
+            if(v.rxWest?.length) { html+=`<tr><td colspan="2" style="font-weight:bold;padding-top:4px">Tây Y:</td></tr>`; v.rxWest.forEach(m=>html+=`<tr><td>- ${m.name} (${m.qty}v)</td><td class="text-right">${(m.qty*m.price).toLocaleString()}</td></tr>`); }
+            html+=`<tr><td style="font-weight:bold;border-top:1px dashed #000">Tổng thuốc:</td><td class="text-right border-top border-dashed border-black">${(v.medPrice||0).toLocaleString()}</td></tr>`;
+            html+=`<tr><td style="font-weight:bold">Thủ thuật:</td><td class="text-right">${(v.procTotal||0).toLocaleString()}</td></tr>`;
+            
+            document.getElementById('prTable').innerHTML = html;
+            let rawT = v.total; if(v.disc>0) rawT = Math.round(v.total/(1-v.disc/100));
+            document.getElementById('prTotal').innerText = rawT.toLocaleString();
+            document.getElementById('prDiscText').innerText = v.disc?`Giảm giá: ${v.disc}%`:'';
+            document.getElementById('prFinal').innerText = v.total.toLocaleString() + 'đ';
+            
+            // Show QR in Print
+            const prQrDiv = document.getElementById('prQrContainer');
+            if(window.config.qrCodeImage) {
+                prQrDiv.classList.remove('hidden');
+                document.getElementById('prQr').src = window.config.qrCodeImage;
+            } else {
+                prQrDiv.classList.add('hidden');
+            }
+            
+            setTimeout(() => window.print(), 300);
+        };
+
+        // --- SETTINGS UTILS ---
+        window.closeModals = function() { document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active')); };
+        window.switchSettingsTab = function(id, btn) {
+            document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden')); document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+        };
+        window.openSettings = function() {
+            document.getElementById('sModal').classList.add('active');
+            document.getElementById('confTitle').value = window.config.clinicTitle;
+            document.getElementById('confDoctor').value = window.config.doctorName;
+            document.getElementById('confPass').value = window.config.password;
+            // Set slider value
+            document.getElementById('headerOverlayInput').value = window.config.headerOverlayOpacity || 0;
+            document.getElementById('overlayValueDisplay').innerText = (window.config.headerOverlayOpacity || 0) + '%';
+            if(window.config.qrCodeImage) document.getElementById('previewQrSettings').src = window.config.qrCodeImage;
+            
+            window.renderDiseaseSettings(); window.renderProcSettings(); window.renderTuChanConfig();
+        };
+        window.saveSettings = function() {
+            window.config.clinicTitle = document.getElementById('confTitle').value;
+            window.config.doctorName = document.getElementById('confDoctor').value;
+            window.config.password = document.getElementById('confPass').value;
+            // Header config saved via onchange already, but ensure update
+            window.saveConfig(); window.closeModals();
+        };
+        
+        // --- KEYPAD & PROFIT ---
+        window.openKeypad = function(m) { keypadMode=m; tempPassInput=""; document.getElementById('keypadModal').classList.add('active'); window.updateDots(); };
+        window.closeKeypad = function() { document.getElementById('keypadModal').classList.remove('active'); };
+        window.addDigit = function(d) { if(tempPassInput.length<6) { tempPassInput+=d; window.updateDots(); if(tempPassInput.length===6) setTimeout(window.checkKeypadPass,100); } };
+        window.removeDigit = function() { if(tempPassInput.length>0) { tempPassInput=tempPassInput.slice(0,-1); window.updateDots(); } };
+        window.updateDots = function() { document.querySelectorAll('.dot').forEach((d,i)=>d.style.background=i<tempPassInput.length?'#5d4037':'transparent'); };
+        window.checkKeypadPass = function() {
+            if(keypadMode==='settings') { window.config.password=tempPassInput; document.getElementById('confPass').value=tempPassInput; window.saveConfig(); window.closeKeypad(); alert("Đã đổi pass"); }
+            else { if(tempPassInput===window.config.password) { window.config.profitVisible=true; window.saveConfig(); window.closeKeypad(); window.updateProfitDisplay(); } else { alert("Sai mật khẩu"); tempPassInput=""; window.updateDots(); } }
+        };
+        window.handleProfitBoxClick = function() { if(!window.config.password) { window.config.profitVisible=!window.config.profitVisible; window.saveConfig(); window.updateProfitDisplay(); } else { if(window.config.profitVisible) { window.config.profitVisible=false; window.saveConfig(); window.updateProfitDisplay(); } else window.openKeypad('unlock'); } };
+        window.updateProfitDisplay = function() {
+            const l = document.getElementById('profitLabel');
+            if(window.config.profitVisible||!window.config.password) {
+                let t=0, cm=`${new Date().getMonth()+1}/${new Date().getFullYear()}`;
+                window.db.forEach(p=>p.visits?.forEach(v=>{ if(new Date(v.date).getMonth()+1===new Date().getMonth()+1 && v.paid) t+=(v.total-(v.cost||0)); }));
+                l.innerText = t.toLocaleString()+'đ';
+            } else l.innerText='******';
+        };
+
+        // --- HISTORY & STATS ---
+        window.viewHistory = function(pid) {
+            const p = window.db.find(x=>x.id==pid); document.getElementById('hName').innerText=p.name;
+            document.getElementById('hContent').innerHTML = p.visits?.map(v=>`<div class="p-4 rounded-xl border border-[#eee] bg-white mb-2 shadow-sm"><div class="flex justify-between text-xs font-bold text-[#8d6e63] mb-1"><span>📅 ${v.date}</span><span>${parseInt(v.total).toLocaleString()}đ</span></div><div class="font-bold text-[#5d4037] mb-1 serif">${v.disease}</div><div class="flex gap-2 justify-end mt-2"><button onclick="window.closeModals();window.startVisit('${pid}',${v.id})" class="px-3 py-1 bg-[#efebe9] text-[#5d4037] text-xs rounded font-bold border">Sửa</button><button onclick="window.deleteVisit('${pid}',${v.id})" class="px-3 py-1 bg-white text-red-600 text-xs rounded font-bold border border-red-100">Xóa</button></div></div>`).join('')||'<p class="text-center text-gray-400">Trống</p>';
+            document.getElementById('hModal').classList.add('active');
+        };
+        window.deleteVisit = function(pid,vid) { if(confirm("Xóa?")) { const p=window.db.find(x=>x.id==pid); p.visits=p.visits.filter(v=>v.id!=vid); window.saveDb(); window.viewHistory(pid); window.render(); } };
+        window.openStats = function() { document.getElementById('analyticsModal').classList.add('active'); setTimeout(()=>{window.renderAnalytics();window.updateChart()},300); };
+        window.updateChart = function() {
+            const ctx = document.getElementById('analyticsChart').getContext('2d'); let lbl=[],data=[];
+            for(let i=5;i>=0;i--) {
+                const d=new Date(); d.setMonth(d.getMonth()-i); lbl.push(`Tháng ${d.getMonth()+1}`);
+                let m=0; window.db.forEach(p=>p.visits?.forEach(v=>{ if(new Date(v.date).getMonth()===d.getMonth()&&v.paid) m+=(v.total-(v.cost||0)); })); data.push(m);
+            }
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, { type:'line', data:{labels:lbl,datasets:[{label:'Lợi nhuận',data:data,borderColor:'#5d4037',backgroundColor:'rgba(93, 64, 55, 0.1)',fill:true,tension:0.3}]}, options:{responsive:true,maintainAspectRatio:false} });
+        };
+        window.renderAnalytics = function() {
+            const f = document.getElementById('anaTimeFilter').value, n = new Date();
+            let all=[]; window.db.forEach(p=>p.visits?.forEach(v=>all.push({...v,pName:p.name})));
+            currentFilteredVisits = all.filter(v=>{ const d=new Date(v.date); if(f==='today') return d.toDateString()===n.toDateString(); if(f==='month') return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); return true; });
+            currentFilteredVisits.sort((a,b)=>new Date(b.date)-new Date(a.date));
+            document.getElementById('anaTableBody').innerHTML = currentFilteredVisits.map(v=>`<tr><td class="p-2 border-b">${v.date}</td><td class="p-2 border-b font-bold">${v.pName}</td><td class="p-2 border-b text-xs">${v.disease}</td><td class="p-2 border-b text-right">${v.total.toLocaleString()}</td><td class="p-2 border-b text-right text-xs text-gray-500">${(v.total-(v.cost||0)).toLocaleString()}</td></tr>`).join('');
+        };
+        
+        // --- OTHER UTILS (Disease, Formula, Procs...) ---
+        window.renderDiseaseSettings = function() { document.getElementById('diseaseList').innerHTML = window.config.diseases.map((d,i)=>`<div class="flex justify-between items-center p-3 border border-[#eee] rounded-lg bg-white shadow-sm"><div class="font-bold text-sm text-[#3e2723]">${d.name}</div><div class="flex gap-2"><button onclick="window.editDisease(${i})" class="text-xs px-3 py-1 bg-[#efebe9] rounded font-bold text-[#5d4037]">SỬA</button><button onclick="window.deleteDisease(${i})" class="text-xs px-3 py-1 bg-red-50 rounded text-red-600">XÓA</button></div></div>`).join(''); };
+        window.editDisease = function(i) { tempDiseaseId=i; const d=window.config.diseases[i]; document.getElementById('dEditName').value=d.name; document.getElementById('dEditSym').value=d.sym||''; window.renderSampleRxSettings('west',d.rxWest||[]); window.renderFormulaList(); document.getElementById('dDetailModal').classList.add('active'); };
+        window.renderFormulaList = function() { const d=window.config.diseases[tempDiseaseId]; document.getElementById('dFormulaList').innerHTML = (!d.eastOptions||!d.eastOptions.length)?'<p class="text-xs text-gray-400 italic">Trống</p>':d.eastOptions.map((f,i)=>`<div class="flex justify-between items-center bg-white border border-[#eee] p-2 rounded"><span class="text-sm font-bold text-[#3e2723]">${f.name} <span class="text-xs font-normal text-gray-500">(${f.ingredients.length} vị)</span></span><div class="flex gap-1"><button onclick="window.editFormula(${i})" class="text-[10px] bg-[#e0e0e0] px-2 py-1 rounded">Sửa</button><button onclick="window.deleteFormula(${i})" class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded">Xóa</button></div></div>`).join(''); };
+        window.addNewFormulaToDisease = function() { const d=window.config.diseases[tempDiseaseId]; if(!d.eastOptions) d.eastOptions=[]; d.eastOptions.push({name:"Bài thuốc mới",ingredients:[]}); window.renderFormulaList(); window.editFormula(d.eastOptions.length-1); };
+        window.deleteFormula = function(i) { if(confirm("Xóa?")) { window.config.diseases[tempDiseaseId].eastOptions.splice(i,1); window.renderFormulaList(); } };
+        window.editFormula = function(i) { tempFormulaIndex=i; const f=window.config.diseases[tempDiseaseId].eastOptions[i]; document.getElementById('feName').value=f.name; window.renderFormulaIngredients(f.ingredients); document.getElementById('formulaEditModal').classList.add('active'); };
+        window.renderFormulaIngredients = function(l) { document.getElementById('feIngredientList').innerHTML = l.map((ing,i)=>`<div class="flex gap-2 mb-2 items-center"><input type="text" value="${ing.name}" id="fe_name_${i}" class="flex-grow text-sm border rounded p-2 song-input"><input type="number" value="${ing.qty}" id="fe_qty_${i}" class="w-16 text-center text-sm border rounded p-2 song-input"><input type="number" value="${ing.price||0}" id="fe_price_${i}" class="w-20 text-right text-xs border rounded p-2 song-input"><button onclick="window.removeFeIngredient(${i})" class="text-red-500 font-bold px-2">×</button></div>`).join(''); };
+        window.addIngredientToFormula = function() { const l=window.getFeIngredientsFromUI(); l.push({name:"",qty:10,price:0}); window.renderFormulaIngredients(l); };
+        window.removeFeIngredient = function(i) { const l=window.getFeIngredientsFromUI(); l.splice(i,1); window.renderFormulaIngredients(l); };
+        window.getFeIngredientsFromUI = function() { const l=[]; for(let i=0;i<document.getElementById('feIngredientList').children.length;i++) l.push({name:document.getElementById(`fe_name_${i}`).value,qty:parseFloat(document.getElementById(`fe_qty_${i}`).value)||0,price:parseFloat(document.getElementById(`fe_price_${i}`).value)||0}); return l; };
+        window.saveFormula = function() { const f=window.config.diseases[tempDiseaseId].eastOptions[tempFormulaIndex]; f.name=document.getElementById('feName').value; f.ingredients=window.getFeIngredientsFromUI().filter(x=>x.name); document.getElementById('formulaEditModal').classList.remove('active'); window.renderFormulaList(); };
+        window.saveDiseaseDetail = function() { const d=window.config.diseases[tempDiseaseId]; d.name=document.getElementById('dEditName').value; d.sym=document.getElementById('dEditSym').value; d.rxWest=window.getRxFromUISettings('west').filter(x=>x.name); document.getElementById('dDetailModal').classList.remove('active'); window.renderDiseaseSettings(); window.saveConfig(); };
+        window.renderSampleRxSettings = function(type,l) { document.getElementById('dSampleListWest').innerHTML = l.map((m,i)=>`<div class="flex gap-2 mb-2 items-center"><input type="text" value="${m.name}" id="rx_${type}_name_${i}" class="flex-grow text-sm border rounded p-2 song-input"><input type="number" value="${m.qty}" id="rx_${type}_qty_${i}" class="w-16 text-center text-sm border rounded p-2 song-input"><span class="text-xs text-gray-500">v</span><input type="number" value="${m.price||0}" id="rx_${type}_price_${i}" class="w-20 text-right text-xs border rounded p-2 song-input"><button onclick="window.deleteSampleMedSettings('${type}',${i})" class="text-red-400 font-bold px-2">×</button></div>`).join(''); };
+        window.addMedToSample = function(t) { const l=window.getRxFromUISettings(t); l.push({name:"",qty:1,price:0}); window.renderSampleRxSettings(t,l); };
+        window.deleteSampleMedSettings = function(t,i) { const l=window.getRxFromUISettings(t); l.splice(i,1); window.renderSampleRxSettings(t,l); };
+        window.getRxFromUISettings = function(t) { const l=[]; for(let i=0;i<document.getElementById('dSampleListWest').children.length;i++) l.push({name:document.getElementById(`rx_${t}_name_${i}`).value,qty:parseFloat(document.getElementById(`rx_${t}_qty_${i}`).value)||0,price:parseFloat(document.getElementById(`rx_${t}_price_${i}`).value)||0}); return l; };
+        window.addNewDisease = function() { window.config.diseases.push({name:"Bệnh mới",sym:"",eastOptions:[],rxWest:[]}); window.renderDiseaseSettings(); window.editDisease(window.config.diseases.length-1); };
+        window.deleteDisease = function(i) { if(confirm('Xóa?')) { window.config.diseases.splice(i,1); window.renderDiseaseSettings(); window.saveConfig(); } };
+        window.renderProcSettings = function() { document.getElementById('procList').innerHTML = window.config.procs.map((p,i)=>`<div class="flex justify-between items-center p-3 border rounded bg-white mb-1"><div class="text-sm font-bold text-[#5d4037]">${p.name} <span class="font-normal text-gray-400">(${p.price.toLocaleString()}đ)</span></div><button onclick="window.deleteProc(${i})" class="text-xs px-2 py-1 bg-red-50 rounded text-red-600 hover:bg-red-100">Xóa</button></div>`).join(''); };
+        window.addProc = function() { const n=document.getElementById('newProcName').value, p=parseInt(document.getElementById('newProcPrice').value); if(n&&p) { window.config.procs.push({name:n,price:p}); document.getElementById('newProcName').value=''; document.getElementById('newProcPrice').value=''; window.renderProcSettings(); window.saveConfig(); } };
+        window.deleteProc = function(i) { if(confirm('Xóa?')) { window.config.procs.splice(i,1); window.renderProcSettings(); window.saveConfig(); } };
+        window.renderTuChanConfig = function() { ['vong','van','vanhoi','thiet','thietchan','machchan'].forEach(sec => document.getElementById(`config${sec.charAt(0).toUpperCase()+sec.slice(1)}Chips`).innerHTML = (window.config.tuChan[sec]||[]).map((t,i)=>`<div class="tuchan-chip flex items-center"><span>${t}</span><button onclick="window.removeTuChanChip('${sec}',${i})" class="ml-1 text-red-500 text-xs">×</button></div>`).join('')); };
+        window.addTuChanChip = function(sec) { const i=document.getElementById(`new${sec.charAt(0).toUpperCase()+sec.slice(1)}Chip`), v=i.value.trim(); if(v&&!window.config.tuChan[sec].includes(v)) { window.config.tuChan[sec].push(v); window.renderTuChanConfig(); i.value=''; window.saveConfig(); } };
+        window.removeTuChanChip = function(sec,i) { if(confirm('Xóa?')) { window.config.tuChan[sec].splice(i,1); window.renderTuChanConfig(); window.saveConfig(); } };
+    </script>
+</body>
+</html>
