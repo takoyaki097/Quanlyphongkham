@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>YHCT Pro - V48 QR & Header Update</title>
+    <title>YHCT Pro - V49 với Thủ thuật & Toa thuốc Nâng cao</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
@@ -42,7 +44,6 @@
             transition: all 0.3s ease;
         }
         
-        /* Lớp phủ tối màu cho header */
         #headerOverlay {
             position: absolute;
             inset: 0;
@@ -62,7 +63,6 @@
             position: relative;
         }
         
-        /* Style cho chế độ header trong suốt (khi có hình nền) */
         .header-card.transparent-mode {
             background: rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -95,6 +95,9 @@
             border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 15px; outline: none;
             transition: all 0.2s;
             -webkit-user-select: text; user-select: text;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            -webkit-appearance: none;
+            appearance: none;
         }
         .song-input:focus { border-color: var(--song-wood); background: #fffcf7; }
         .song-label { font-size: 11px; font-weight: 700; color: #8d6e63; text-transform: uppercase; margin-bottom: 4px; display: block; }
@@ -157,11 +160,16 @@
         .tab-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #eee; background: #fff; color: #9e9e9e; font-size: 13px; font-weight: 600; white-space: nowrap; -webkit-user-select: none; cursor: pointer; }
         .tab-btn.active { background: var(--song-wood); color: #fff; border-color: var(--song-wood); }
 
-        /* NUMBER INPUT STYLES */
+        /* NUMBER INPUT STYLES - FIXED FOR IPAD */
         .number-input-container { position: relative; }
         .number-input-display {
             width: 100%; padding: 12px; text-align: center; font-size: 18px; font-weight: bold;
             color: #3e2723; background: #fff; border: 2px solid #d7ccc8; border-radius: 12px; cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+            -webkit-appearance: none;
+            appearance: none;
         }
         .number-input-display:focus { outline: none; border-color: var(--song-wood); background: #fffcf7; }
         .number-input-label { font-size: 10px; font-weight: bold; color: #8d6e63; text-transform: uppercase; text-align: center; margin-bottom: 5px; }
@@ -202,7 +210,192 @@
         .progress-container { width: 100%; background-color: #f0f0f0; border-radius: 10px; margin: 10px 0; overflow: hidden; }
         .progress-bar { height: 20px; background-color: #4caf50; width: 0%; border-radius: 10px; transition: width 0.3s ease; text-align: center; color: white; font-size: 12px; line-height: 20px; font-weight: bold; }
 
-        @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; } #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; } }
+        /* NEW STYLES FOR PROCEDURE & MEDICINE DAYS */
+        .days-input-container { display: flex; align-items: center; gap: 5px; }
+        .days-input { width: 60px; text-align: center; padding: 5px; border: 1px solid #d7ccc8; border-radius: 6px; }
+        
+        .time-btn { 
+            padding: 8px 12px; border: 1px solid #d7ccc8; border-radius: 8px; 
+            font-size: 14px; font-weight: 600; background: #fff; cursor: pointer;
+            transition: all 0.2s;
+            min-width: 60px;
+            text-align: center;
+        }
+        .time-btn.active { background: #5d4037; color: white; border-color: #5d4037; }
+        
+        .procedure-item { 
+            background: #fff; border: 1px solid #eee; border-radius: 12px; 
+            padding: 12px; margin-bottom: 10px;
+        }
+        
+        /* PRINT MODAL STYLES */
+        .print-option-btn { 
+            padding: 12px; border: 2px solid #d7ccc8; border-radius: 12px; 
+            background: #fff; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100px;
+        }
+        .print-option-btn:hover { border-color: #5d4037; transform: translateY(-2px); }
+        .print-option-btn.active { border-color: #5d4037; background: #f5f0ed; }
+        
+        @media print { 
+            body * { visibility: hidden; } 
+            #printArea, #printArea * { visibility: visible; } 
+            #printArea { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                padding: 20px; 
+                font-size: 12pt;
+                background: white;
+            } 
+        }
+
+        /* FIX FOR IPAD INPUTS */
+        .ipad-input-fix {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            cursor: text;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+        
+        /* DISEASE MODAL STYLES */
+        .disease-modal-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .disease-ingredient-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        
+        .disease-ingredient-row input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #d7ccc8;
+            border-radius: 6px;
+            min-width: 0;
+        }
+        
+        /* NEW STYLES FOR SETTINGS SCROLLABLE TABLES */
+        .settings-scrollable-container {
+            overflow-x: auto;
+            max-width: 100%;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+        
+        .settings-medicine-table {
+            min-width: 700px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        
+        .settings-medicine-table th,
+        .settings-medicine-table td {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        .settings-medicine-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            color: #5d4037;
+        }
+        
+        .settings-medicine-table input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #d7ccc8;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 0;
+        }
+        
+        .settings-medicine-table .small-input {
+            width: 80px;
+            min-width: 80px;
+        }
+        
+        /* NEW STYLES FOR VISIT MEDICINE CONTROLS */
+        .visit-medicine-container {
+            overflow-x: auto;
+            max-width: 100%;
+            padding-bottom: 10px;
+        }
+        
+        .visit-medicine-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            min-width: 800px;
+        }
+        
+        .visit-medicine-row input {
+            padding: 10px 12px;
+            border: 1px solid #d7ccc8;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 0;
+        }
+        
+        .visit-medicine-row .med-name {
+            flex: 2;
+            min-width: 150px;
+        }
+        
+        .visit-medicine-row .med-qty {
+            width: 100px;
+            min-width: 100px;
+        }
+        
+        .visit-medicine-row .med-days {
+            width: 90px;
+            min-width: 90px;
+        }
+        
+        .visit-medicine-row .med-price {
+            width: 120px;
+            min-width: 120px;
+        }
+        
+        .visit-medicine-row .med-time {
+            width: 180px;
+            min-width: 180px;
+        }
+        
+        .visit-medicine-row .med-actions {
+            width: 60px;
+            min-width: 60px;
+        }
+        
+        .visit-time-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .visit-time-buttons .time-btn {
+            padding: 8px 10px;
+            font-size: 13px;
+            min-width: 50px;
+            flex: 1;
+        }
+        
+        /* SETTINGS TAB MED CONTENT */
+        .tab-med-content {
+            max-width: 100%;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -235,13 +428,14 @@
             </div>
             
             <div class="relative mb-4">
-                <input type="text" id="search" onkeyup="window.debouncedRender()" placeholder="🔍 Tìm tên hoặc số điện thoại..." class="w-full bg-white border border-[#e0e0e0] rounded-xl py-3 px-4 shadow-sm text-[#3e2723] outline-none focus:border-[#8d6e63]">
+                <input type="text" id="search" onkeyup="window.debouncedRender()" placeholder="🔍 Tìm tên hoặc số điện thoại..." class="w-full bg-white border border-[#e0e0e0] rounded-xl py-3 px-4 shadow-sm text-[#3e2723] outline-none focus:border-[#8d6e63] ipad-input-fix">
             </div>
             
             <div id="list" class="space-y-3 pb-24"></div>
         </div>
     </div>
 
+    <!-- VISIT MODAL -->
     <div id="vModal" class="modal">
         <div class="modal-box">
             <div class="modal-header">
@@ -260,21 +454,21 @@
                 <input type="hidden" id="vPid"><input type="hidden" id="vVisitId">
                 
                 <div id="step1" class="step-content active space-y-5">
-                    <div><label class="song-label">Ngày khám</label><input type="date" id="vDate" class="song-input"></div>
-                    <div><label class="song-label">Chẩn đoán</label><select id="vDiseaseSelect" onchange="window.loadDiseaseSuggestions()" class="song-input mb-2 font-bold text-[#3e2723]"><option value="">-- Chọn bệnh mẫu --</option></select><input type="text" id="vDiseaseInput" placeholder="Chẩn đoán cụ thể..." class="song-input"></div>
+                    <div><label class="song-label">Ngày khám</label><input type="date" id="vDate" class="song-input ipad-input-fix"></div>
+                    <div><label class="song-label">Chẩn đoán</label><select id="vDiseaseSelect" onchange="window.loadDiseaseSuggestions()" class="song-input mb-2 font-bold text-[#3e2723]"><option value="">-- Chọn bệnh mẫu --</option></select><input type="text" id="vDiseaseInput" placeholder="Chẩn đoán cụ thể..." class="song-input ipad-input-fix"></div>
                     <div id="suggestedSymptomsBox" class="hidden p-3 bg-[#f1f8e9] border border-[#c5e1a5] rounded-lg"><label class="song-label text-[#33691e]">Gợi ý</label><div id="symptomButtons" class="flex flex-wrap gap-1 mt-1"></div></div>
-                    <div><label class="song-label">Triệu chứng & Ghi chú</label><textarea id="vSpecial" rows="3" class="song-input"></textarea></div>
+                    <div><label class="song-label">Triệu chứng & Ghi chú</label><textarea id="vSpecial" rows="3" class="song-input ipad-input-fix"></textarea></div>
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <div class="number-input-label">HUYẾT ÁP (mmHg)</div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div class="number-input-container">
-                                    <input type="text" id="vBpSys" class="number-input-display" placeholder="120" readonly onclick="window.openNumberPad('vBpSys', 'Huyết áp tâm thu', '50-250', 120)">
+                                    <input type="text" id="vBpSys" class="number-input-display" placeholder="120" readonly onclick="window.openNumberPad('vBpSys', 'Huyết áp tâm thu', '50-250', 120)" onfocus="this.blur()">
                                     <div class="text-center text-xs text-gray-500 mt-1">Tâm thu</div>
                                 </div>
                                 <div class="number-input-container">
-                                    <input type="text" id="vBpDia" class="number-input-display" placeholder="80" readonly onclick="window.openNumberPad('vBpDia', 'Huyết áp tâm trương', '30-150', 80)">
+                                    <input type="text" id="vBpDia" class="number-input-display" placeholder="80" readonly onclick="window.openNumberPad('vBpDia', 'Huyết áp tâm trương', '30-150', 80)" onfocus="this.blur()">
                                     <div class="text-center text-xs text-gray-500 mt-1">Tâm trương</div>
                                 </div>
                             </div>
@@ -282,31 +476,85 @@
                         </div>
                         <div>
                             <div class="number-input-label">MẠCH (lần/phút)</div>
-                            <div class="number-input-container"><input type="text" id="vPulse" class="number-input-display" placeholder="80" readonly onclick="window.openNumberPad('vPulse', 'Mạch', '40-180', 80)"></div>
+                            <div class="number-input-container"><input type="text" id="vPulse" class="number-input-display" placeholder="80" readonly onclick="window.openNumberPad('vPulse', 'Mạch', '40-180', 80)" onfocus="this.blur()"></div>
                             <div class="text-center font-bold text-[#3e2723] mt-2" id="displayPulse">80</div>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div><div class="number-input-label">CHIỀU CAO (cm)</div><div class="number-input-container"><input type="text" id="vHeight" class="number-input-display" placeholder="165" readonly onclick="window.openNumberPad('vHeight', 'Chiều cao', '100-220', 165)"></div></div>
-                        <div><div class="number-input-label">CÂN NẶNG (kg)</div><div class="number-input-container"><input type="text" id="vWeight" class="number-input-display" placeholder="60" readonly onclick="window.openNumberPad('vWeight', 'Cân nặng', '30-150', 60)"></div></div>
+                        <div><div class="number-input-label">CHIỀU CAO (cm)</div><div class="number-input-container"><input type="text" id="vHeight" class="number-input-display" placeholder="165" readonly onclick="window.openNumberPad('vHeight', 'Chiều cao', '100-220', 165)" onfocus="this.blur()"></div></div>
+                        <div><div class="number-input-label">CÂN NẶNG (kg)</div><div class="number-input-container"><input type="text" id="vWeight" class="number-input-display" placeholder="60" readonly onclick="window.openNumberPad('vWeight', 'Cân nặng', '30-150', 60)" onfocus="this.blur()"></div></div>
                     </div>
                     <div class="flex justify-between text-sm font-bold text-[#3e2723] mt-1"><span id="displayHeightWeight">165cm - 60kg</span><span id="displayBMI">BMI: 22.0</span></div>
                 </div>
 
                 <div id="step2" class="step-content hidden space-y-4">
-                    <div class="tuchan-section"><div class="tuchan-title"><span>1</span> VỌNG (Nhìn)</div><div id="tuchanVongButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVongExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
-                    <div class="tuchan-section"><div class="tuchan-title"><span>2</span> VĂN (Nghe, Ngửi)</div><div id="tuchanVanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVanExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
-                    <div class="tuchan-section"><div class="tuchan-title"><span>3</span> VẤN (Hỏi)</div><div id="tuchanVanhoiButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVanHoiExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
-                    <div class="tuchan-section"><div class="tuchan-title"><span>4</span> THIẾT (Sờ nắn)</div><div id="tuchanThietButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vThietExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
-                    <div class="tuchan-section"><div class="tuchan-title"><span>5</span> THIỆT (Lưỡi)</div><div id="tuchanThietchanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vThietChanExtra" class="song-input border-0 border-b rounded-none px-0" placeholder="Ghi chú thêm..."></div>
-                    <div class="tuchan-section border-2 border-red-100 bg-red-50"><div class="tuchan-title"><span>6</span> MẠCH</div><div id="tuchanMachchanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vMachChanExtra" class="song-input bg-transparent border-0 border-b border-red-200 rounded-none px-0" placeholder="Mô tả mạch..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>1</span> VỌNG (Nhìn)</div><div id="tuchanVongButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVongExtra" class="song-input border-0 border-b rounded-none px-0 ipad-input-fix" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>2</span> VĂN (Nghe, Ngửi)</div><div id="tuchanVanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVanExtra" class="song-input border-0 border-b rounded-none px-0 ipad-input-fix" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>3</span> VẤN (Hỏi)</div><div id="tuchanVanhoiButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVanHoiExtra" class="song-input border-0 border-b rounded-none px-0 ipad-input-fix" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>4</span> THIẾT (Sờ nắn)</div><div id="tuchanThietButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vThietExtra" class="song-input border-0 border-b rounded-none px-0 ipad-input-fix" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section"><div class="tuchan-title"><span>5</span> THIỆT (Lưỡi)</div><div id="tuchanThietchanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vThietChanExtra" class="song-input border-0 border-b rounded-none px-0 ipad-input-fix" placeholder="Ghi chú thêm..."></div>
+                    <div class="tuchan-section border-2 border-red-100 bg-red-50"><div class="tuchan-title"><span>6</span> MẠCH</div><div id="tuchanMachchanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vMachChanExtra" class="song-input bg-transparent border-0 border-b border-red-200 rounded-none px-0 ipad-input-fix" placeholder="Mô tả mạch..."></div>
                 </div>
 
                 <div id="step3" class="step-content hidden space-y-6">
-                    <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm"><div class="flex justify-between items-center mb-3"><label class="font-bold text-[#5d4037] serif text-lg">Thủ thuật</label><span class="text-xs text-gray-500">Chọn và giảm giá nếu có</span></div><div id="vProcList" class="space-y-3"></div></div>
-                    <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm"><div class="flex justify-between items-center mb-2"><label class="font-bold text-[#5d4037] serif text-lg">Đông Y (Gam)</label><button onclick="window.addMedRow('east')" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded-full">+ Vị thuốc</button></div><div id="eastPresetsArea" class="mb-3 hidden p-2 bg-[#fdfbf7] rounded border border-dashed border-[#d7ccc8]"><p class="text-[10px] uppercase font-bold text-[#8d6e63] mb-1">Bài thuốc mẫu:</p><div id="eastPresetButtons" class="whitespace-nowrap overflow-x-auto pb-1"></div></div><div id="vMedListEast" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div></div>
-                    <div class="bg-white p-4 border border-blue-200 rounded-xl shadow-sm"><div class="flex justify-between items-center mb-2"><label class="font-bold text-blue-800 serif text-lg">Tây Y (Viên)</label><button onclick="window.addMedRow('west')" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full">+ Thuốc</button></div><div id="vMedListWest" class="space-y-2"></div></div>
-                    <div class="bg-[#efebe9] p-4 rounded-xl border border-[#d7ccc8]"><div class="flex justify-between text-sm mt-1"><span>Tiền thuốc:</span><input type="number" id="displayMedTotalInput" onchange="window.manualUpdateMedTotal()" class="w-28 text-right bg-transparent border-b border-[#5d4037] font-bold outline-none" value="0"></div><div class="flex justify-between text-sm mt-2"><span>Thủ thuật:</span><span id="displayProcTotal" class="font-bold">0đ</span></div><div class="flex justify-between text-xl font-black mt-3 pt-2 border-t border-[#a1887f] text-[#3e2723]"><span>Tổng cộng:</span><span id="displayGrandTotal">0đ</span></div><div class="mt-2"><label class="text-[10px] uppercase font-bold text-gray-500">Vốn:</label><input type="number" id="vCost" class="song-input text-right py-1 h-8" placeholder="0"></div></div>
+                    <!-- PROCEDURES SECTION -->
+                    <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="font-bold text-[#5d4037] serif text-lg">Thủ thuật</label>
+                            <button onclick="window.addProcedureRow()" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded-full">+ Thủ thuật</button>
+                        </div>
+                        <div id="vProcList" class="space-y-3"></div>
+                    </div>
+                    
+                    <!-- EASTERN MEDICINE SECTION -->
+                    <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="font-bold text-[#5d4037] serif text-lg">Đông Y (Gam)</label>
+                            <button onclick="window.addMedRow('east')" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded-full">+ Vị thuốc</button>
+                        </div>
+                        <div id="eastPresetsArea" class="mb-3 hidden p-2 bg-[#fdfbf7] rounded border border-dashed border-[#d7ccc8]">
+                            <p class="text-[10px] uppercase font-bold text-[#8d6e63] mb-1">Bài thuốc mẫu:</p>
+                            <div id="eastPresetButtons" class="whitespace-nowrap overflow-x-auto pb-1"></div>
+                        </div>
+                        <div class="visit-medicine-container">
+                            <div id="vMedListEast" class="space-y-2"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- WESTERN MEDICINE SECTION -->
+                    <div class="bg-white p-4 border border-blue-200 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="font-bold text-blue-800 serif text-lg">Tây Y (Viên)</label>
+                            <button onclick="window.addMedRow('west')" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full">+ Thuốc</button>
+                        </div>
+                        <div class="visit-medicine-container">
+                            <div id="vMedListWest" class="space-y-2"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- TOTAL CALCULATION -->
+                    <div class="bg-[#efebe9] p-4 rounded-xl border border-[#d7ccc8]">
+                        <div class="flex justify-between text-sm mt-1">
+                            <span>Tiền thuốc Đông Y:</span>
+                            <span id="displayMedTotalEast" class="font-bold">0đ</span>
+                        </div>
+                        <div class="flex justify-between text-sm mt-1">
+                            <span>Tiền thuốc Tây Y:</span>
+                            <span id="displayMedTotalWest" class="font-bold">0đ</span>
+                        </div>
+                        <div class="flex justify-between text-sm mt-2">
+                            <span>Thủ thuật:</span>
+                            <span id="displayProcTotal" class="font-bold">0đ</span>
+                        </div>
+                        <div class="flex justify-between text-xl font-black mt-3 pt-2 border-t border-[#a1887f] text-[#3e2723]">
+                            <span>Tổng cộng:</span>
+                            <span id="displayGrandTotal">0đ</span>
+                        </div>
+                        <div class="mt-2">
+                            <label class="text-[10px] uppercase font-bold text-gray-500">Vốn:</label>
+                            <input type="number" id="vCost" class="song-input text-right py-1 h-8 ipad-input-fix" placeholder="0">
+                        </div>
+                    </div>
                 </div>
 
                 <div id="step4" class="step-content hidden space-y-6 text-center">
@@ -329,6 +577,29 @@
                         <input type="checkbox" id="vPaid" class="w-5 h-5 accent-[#5d4037]" checked>
                         <label for="vPaid" class="font-bold text-[#3e2723]">Đã thu tiền</label>
                     </div>
+                    
+                    <!-- PRINT OPTIONS -->
+                    <div class="bg-white p-4 border rounded-xl">
+                        <p class="text-xs font-bold uppercase text-[#5d4037] mb-2">Tùy chọn in ấn</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="window.preparePrint('east')" class="print-option-btn">
+                                <span class="text-lg">🌿</span>
+                                <span class="text-xs font-bold mt-1">Đơn Đông Y</span>
+                            </button>
+                            <button onclick="window.preparePrint('west')" class="print-option-btn">
+                                <span class="text-lg">💊</span>
+                                <span class="text-xs font-bold mt-1">Đơn Tây Y</span>
+                            </button>
+                            <button onclick="window.preparePrint('both')" class="print-option-btn">
+                                <span class="text-lg">📋</span>
+                                <span class="text-xs font-bold mt-1">Đơn cả hai</span>
+                            </button>
+                            <button onclick="window.preparePrint('invoice')" class="print-option-btn">
+                                <span class="text-lg">🧾</span>
+                                <span class="text-xs font-bold mt-1">Hóa đơn</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -341,14 +612,124 @@
         </div>
     </div>
 
-    <div id="pModal" class="modal"><div class="modal-box" style="height:auto; max-height:80vh;"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Hồ Sơ Bệnh Nhân</h2><button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button></div><div class="modal-body"><input type="hidden" id="pEditId"><div class="space-y-4"><div><label class="song-label">Họ Tên *</label><input type="text" id="pName" class="song-input" placeholder="Nhập họ tên"></div><div class="grid grid-cols-2 gap-4"><div><label class="song-label">Năm sinh</label><div class="number-input-container"><input type="text" id="pYear" class="number-input-display" placeholder="1990" readonly onclick="window.openNumberPad('pYear', 'Năm sinh', '1900-2024', 1990)"></div></div><div><label class="song-label">Số điện thoại</label><div class="number-input-container"><input type="text" id="pPhone" class="number-input-display" placeholder="0123456789" readonly onclick="window.openPhonePad()"></div></div></div><div><label class="song-label">Địa chỉ</label><input type="text" id="pAddress" class="song-input" placeholder="Địa chỉ"></div></div></div><div class="modal-footer"><button onclick="window.closeModals()" class="flex-1 py-3 btn-glass">Hủy</button><button onclick="window.savePatient()" class="flex-1 py-3 btn-primary">Lưu Hồ Sơ</button></div></div></div>
+    <!-- PRINT OPTIONS MODAL -->
+    <div id="printModal" class="modal">
+        <div class="modal-box max-w-md">
+            <div class="modal-header">
+                <h2 class="font-bold text-xl text-[#3e2723]">Chọn loại in</h2>
+                <button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button>
+            </div>
+            <div class="modal-body p-6">
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button onclick="window.doPrint('east')" class="print-option-btn">
+                        <span class="text-2xl">🌿</span>
+                        <span class="text-sm font-bold mt-2">Đơn Đông Y</span>
+                    </button>
+                    <button onclick="window.doPrint('west')" class="print-option-btn">
+                        <span class="text-2xl">💊</span>
+                        <span class="text-sm font-bold mt-2">Đơn Tây Y</span>
+                    </button>
+                    <button onclick="window.doPrint('both')" class="print-option-btn">
+                        <span class="text-2xl">📋</span>
+                        <span class="text-sm font-bold mt-2">Đơn cả hai</span>
+                    </button>
+                    <button onclick="window.doPrint('invoice')" class="print-option-btn">
+                        <span class="text-2xl">🧾</span>
+                        <span class="text-sm font-bold mt-2">Hóa đơn</span>
+                    </button>
+                </div>
+                <div class="text-center">
+                    <button onclick="window.closeModals()" class="btn-glass px-6 py-2">Hủy</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- PATIENT MODAL -->
+    <div id="pModal" class="modal"><div class="modal-box" style="height:auto; max-height:80vh;"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Hồ Sơ Bệnh Nhân</h2><button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button></div><div class="modal-body"><input type="hidden" id="pEditId"><div class="space-y-4"><div><label class="song-label">Họ Tên *</label><input type="text" id="pName" class="song-input ipad-input-fix" placeholder="Nhập họ tên"></div><div class="grid grid-cols-2 gap-4"><div><label class="song-label">Năm sinh</label><div class="number-input-container"><input type="text" id="pYear" class="number-input-display" placeholder="1990" readonly onclick="window.openNumberPad('pYear', 'Năm sinh', '1900-2024', 1990)" onfocus="this.blur()"></div></div><div><label class="song-label">Số điện thoại</label><div class="number-input-container"><input type="text" id="pPhone" class="number-input-display" placeholder="0123456789" readonly onclick="window.openPhonePad()" onfocus="this.blur()"></div></div></div><div><label class="song-label">Địa chỉ</label><input type="text" id="pAddress" class="song-input ipad-input-fix" placeholder="Địa chỉ"></div></div></div><div class="modal-footer"><button onclick="window.closeModals()" class="flex-1 py-3 btn-glass">Hủy</button><button onclick="window.savePatient()" class="flex-1 py-3 btn-primary">Lưu Hồ Sơ</button></div></div></div>
+
+    <!-- NUMBER PAD MODAL -->
     <div id="numberPadModal" class="number-pad-modal"><div class="number-pad-container"><div class="number-pad-header"><h3 id="numberPadTitle" class="font-bold text-lg text-[#3e2723]">Nhập số</h3><p id="numberPadRange" class="text-xs text-gray-500"></p></div><div class="number-pad-display" id="numberPadDisplay">0</div><div class="number-pad-grid"><button class="number-pad-btn" onclick="window.addNumberPadDigit('1')">1</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('2')">2</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('3')">3</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('4')">4</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('5')">5</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('6')">6</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('7')">7</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('8')">8</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('9')">9</button><button class="number-pad-btn clear" onclick="window.clearNumberPad()">C</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('0')">0</button><button class="number-pad-btn delete" onclick="window.deleteNumberPadDigit()">⌫</button></div><div class="number-pad-footer"><button class="number-pad-close" onclick="window.closeNumberPad()">Đóng</button><button class="number-pad-btn confirm" onclick="window.confirmNumberPad()">XONG</button></div></div></div>
 
+    <!-- DISEASE MODAL -->
+    <div id="diseaseModal" class="modal">
+        <div class="modal-box max-w-2xl">
+            <div class="modal-header">
+                <h2 class="font-bold text-xl text-[#3e2723]" id="diseaseModalTitle">Thêm Bệnh Mới</h2>
+                <button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button>
+            </div>
+            <div class="modal-body disease-modal-container">
+                <input type="hidden" id="diseaseEditIndex">
+                <div class="space-y-4">
+                    <div>
+                        <label class="song-label">Tên bệnh *</label>
+                        <input type="text" id="diseaseName" class="song-input ipad-input-fix" placeholder="Nhập tên bệnh">
+                    </div>
+                    <div>
+                        <label class="song-label">Triệu chứng gợi ý (phân cách bằng dấu phẩy)</label>
+                        <textarea id="diseaseSymptoms" class="song-input ipad-input-fix" rows="2" placeholder="Ví dụ: sốt, ho, đau đầu"></textarea>
+                    </div>
+                    
+                    <div class="border border-[#d7ccc8] rounded-lg p-4">
+                        <h3 class="font-bold text-[#5d4037] mb-3">Bài thuốc Đông Y mẫu</h3>
+                        <div>
+                            <label class="song-label">Tên bài thuốc</label>
+                            <input type="text" id="diseaseEastName" class="song-input ipad-input-fix mb-3" placeholder="Tên bài thuốc, ví dụ: Bài thuốc cảm mạo">
+                        </div>
+                        
+                        <div class="settings-scrollable-container">
+                            <table class="settings-medicine-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tên vị thuốc</th>
+                                        <th class="small-input">Số gam</th>
+                                        <th class="small-input">Số ngày</th>
+                                        <th class="small-input">Đơn giá</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eastIngredientsContainer">
+                                    <!-- Ingredients will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <button onclick="window.addEastIngredient()" class="btn-primary text-sm px-4 py-2">+ Thêm vị thuốc</button>
+                    </div>
+                    
+                    <div class="border border-blue-200 rounded-lg p-4">
+                        <h3 class="font-bold text-blue-800 mb-3">Thuốc Tây Y mẫu</h3>
+                        <div class="settings-scrollable-container">
+                            <table class="settings-medicine-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tên thuốc</th>
+                                        <th class="small-input">Số viên/ngày</th>
+                                        <th class="small-input">Số ngày</th>
+                                        <th class="small-input">Đơn giá</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="westMedicinesContainer">
+                                    <!-- Medicines will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button onclick="window.addWestMedicine()" class="btn-primary text-sm px-4 py-2 bg-blue-600">+ Thêm thuốc Tây Y</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="window.closeModals()" class="flex-1 py-3 btn-glass">Hủy</button>
+                <button onclick="window.saveDisease()" class="flex-1 py-3 btn-primary">Lưu Bệnh</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTHER MODALS (Backup, Settings, etc.) -->
     <div id="backupModal" class="modal"><div class="modal-box max-w-2xl"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">🔧 Sao lưu & Khôi phục</h2><button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button></div><div class="modal-body space-y-6"><div class="backup-grid"><div class="backup-card" onclick="window.exportToExcel()"><div class="backup-icon">📊</div><div class="backup-title">Xuất Excel</div><div class="backup-desc">Xuất dữ liệu báo cáo</div></div><div class="backup-card" onclick="window.exportFullDataExcel()"><div class="backup-icon">📁</div><div class="backup-title">Xuất toàn bộ Excel</div><div class="backup-desc">Sao lưu toàn bộ dữ liệu</div></div><div class="backup-card" onclick="window.exportToJSON()"><div class="backup-icon">💾</div><div class="backup-title">Xuất JSON</div><div class="backup-desc">Sao lưu file JSON</div></div><div class="backup-card" onclick="window.importFromJSON()"><div class="backup-icon">🔄</div><div class="backup-title">Nhập JSON</div><div class="backup-desc">Khôi phục từ file backup</div></div></div><div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4"><div class="flex items-center gap-2 mb-2"><span class="text-yellow-600">⚠️</span><h3 class="font-bold text-yellow-700">Lưu ý</h3></div><ul class="text-sm text-yellow-600 space-y-1"><li>• Sao lưu thường xuyên tránh mất dữ liệu</li><li>• Khôi phục JSON sẽ ghi đè dữ liệu hiện tại</li></ul></div></div><div class="modal-footer"><button onclick="window.closeModals()" class="flex-1 py-3 btn-glass">Đóng</button></div></div></div>
     
-    <div id="importProgressModal" class="modal"><div class="modal-box max-w-md"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Đang xử lý...</h2></div><div class="modal-body space-y-4"><div id="importStatus" class="text-center font-bold text-[#5d4037]">Đang xử lý...</div><div class="progress-container"><div id="importProgressBar" class="progress-bar">0%</div></div><div id="importDetails" class="text-sm text-gray-600 text-center"></div></div></div></div>
-
+    <!-- SETTINGS MODAL -->
     <div id="sModal" class="modal">
         <div class="modal-box">
             <div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Thiết lập</h2><button onclick="window.closeModals()" class="text-3xl">&times;</button></div>
@@ -360,8 +741,8 @@
             </div>
             <div class="modal-body">
                 <div id="tabUI" class="settings-panel active space-y-4">
-                    <section><label class="song-label">Tên phòng khám</label><input type="text" id="confTitle" class="song-input"></section>
-                    <section><label class="song-label">Bác sĩ phụ trách</label><input type="text" id="confDoctor" class="song-input"></section>
+                    <section><label class="song-label">Tên phòng khám</label><input type="text" id="confTitle" class="song-input ipad-input-fix"></section>
+                    <section><label class="song-label">Bác sĩ phụ trách</label><input type="text" id="confDoctor" class="song-input ipad-input-fix"></section>
                     
                     <div class="p-4 border border-[#d7ccc8] rounded-xl bg-gray-50 space-y-4">
                         <h3 class="font-bold text-[#5d4037] border-b border-gray-300 pb-2 mb-2">🎨 Tùy chỉnh Giao diện</h3>
@@ -392,57 +773,191 @@
                     </div>
                 </div>
 
-                <div id="tabMed" class="settings-panel space-y-6 hidden"><div><h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Danh mục Bệnh</h3><div id="diseaseList" class="space-y-2 mb-3"></div><button onclick="window.addNewDisease()" class="w-full py-3 border border-dashed border-[#bdbdbd] font-bold rounded-xl text-gray-500">+ Thêm Bệnh Mới</button></div><div><h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Dịch vụ</h3><div id="procList" class="space-y-2 mb-3"></div><div class="flex gap-2"><input type="text" id="newProcName" placeholder="Tên DV" class="song-input flex-1"><input type="number" id="newProcPrice" placeholder="Giá" class="song-input w-24"><button onclick="window.addProc()" class="btn-primary px-4 text-sm">Thêm</button></div></div><div><h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Tứ chẩn</h3><div id="tuChanConfigArea" class="space-y-4"><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vọng</h4><div class="flex flex-wrap gap-1 mb-2" id="configVongChips"></div><input type="text" id="newVongChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('vong')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Văn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanChips"></div><input type="text" id="newVanChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('van')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vấn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanhoiChips"></div><input type="text" id="newVanhoiChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('vanhoi')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiết</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietChips"></div><input type="text" id="newThietChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('thiet')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiệt</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietchanChips"></div><input type="text" id="newThietchanChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('thietchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div><div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Mạch</h4><div class="flex flex-wrap gap-1 mb-2" id="configMachchanChips"></div><input type="text" id="newMachchanChip" placeholder="Thêm..." class="song-input text-sm"><button onclick="window.addTuChanChip('machchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div></div></div></div>
+                <div id="tabMed" class="settings-panel space-y-6 hidden tab-med-content">
+                    <div>
+                        <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Danh mục Bệnh</h3>
+                        <div id="diseaseList" class="space-y-2 mb-3"></div>
+                        <button onclick="window.addNewDisease()" class="w-full py-3 border border-dashed border-[#bdbdbd] font-bold rounded-xl text-gray-500 hover:bg-gray-50 active:bg-gray-100">+ Thêm Bệnh Mới</button>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Dịch vụ Thủ thuật</h3>
+                        <div id="procList" class="space-y-2 mb-3"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="newProcName" placeholder="Tên DV" class="song-input flex-1 ipad-input-fix">
+                            <input type="number" id="newProcPrice" placeholder="Giá 1 lần" class="song-input w-24 ipad-input-fix">
+                            <button onclick="window.addProc()" class="btn-primary px-4 text-sm">Thêm</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Tứ chẩn</h3>
+                        <div id="tuChanConfigArea" class="space-y-4">
+                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vọng</h4><div class="flex flex-wrap gap-1 mb-2" id="configVongChips"></div><input type="text" id="newVongChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('vong')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
+                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Văn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanChips"></div><input type="text" id="newVanChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('van')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
+                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vấn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanhoiChips"></div><input type="text" id="newVanhoiChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('vanhoi')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
+                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiết</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietChips"></div><input type="text" id="newThietChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('thiet')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
+                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiệt</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietchanChips"></div><input type="text" id="newThietchanChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('thietchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
+                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Mạch</h4><div class="flex flex-wrap gap-1 mb-2" id="configMachchanChips"></div><input type="text" id="newMachchanChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('machchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
+                        </div>
+                    </div>
+                </div>
                 <div id="tabSec" class="settings-panel space-y-4 hidden"><section><label class="song-label">Mật khẩu admin</label><div class="flex gap-2"><input type="password" id="confPass" readonly class="song-input w-32 bg-[#f5f5f5] text-center"><button onclick="window.openKeypad('settings')" class="btn-primary px-4 text-xs">Đổi pass</button></div></section></div>
                 <div id="tabBackup" class="settings-panel space-y-4 hidden"><div class="text-center"><button onclick="window.openBackupModalDirect()" class="btn-primary px-6 py-3 text-lg">📂 Mở công cụ Sao lưu</button><p class="text-sm text-gray-500 mt-2">Xuất/nhập dữ liệu</p></div></div>
             </div>
             <div class="modal-footer justify-end"><button onclick="window.saveSettings()" class="btn-primary px-6">Lưu Cấu Hình</button></div>
         </div>
     </div>
-    
-    <div id="dDetailModal" class="modal"><div class="modal-box"><div class="modal-header"><h3 class="font-bold text-[#3e2723]">Chi tiết Bệnh</h3><button onclick="document.getElementById('dDetailModal').classList.remove('active')" class="text-2xl">&times;</button></div><div class="modal-body space-y-4"><div><label class="song-label">Tên bệnh</label><input type="text" id="dEditName" class="song-input font-bold text-lg"></div><div><label class="song-label">Triệu chứng gợi ý</label><textarea id="dEditSym" rows="2" class="song-input"></textarea></div><div class="bg-[#fdfbf7] border rounded-xl p-4"><div class="flex justify-between items-center mb-3"><label class="song-label text-[#5d4037]">Bài thuốc Đông Y</label><button onclick="window.addNewFormulaToDisease()" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded">+ Tạo bài mới</button></div><div id="dFormulaList" class="space-y-2"></div></div><div class="bg-[#f0f9ff] border border-blue-100 rounded-xl p-4"><div class="flex justify-between items-center mb-2"><label class="song-label text-blue-800">Toa mẫu Tây Y</label><button onclick="window.addMedToSample('west')" class="text-[10px] bg-blue-600 text-white px-2 py-1 rounded">+ Thuốc</button></div><div id="dSampleListWest" class="space-y-2"></div></div></div><div class="modal-footer justify-end"><button onclick="window.saveDiseaseDetail()" class="btn-primary px-6">Lưu</button></div></div></div>
-    <div id="formulaEditModal" class="modal"><div class="modal-box" style="height:auto; max-height:80vh;"><div class="modal-header"><h3 class="font-bold text-[#3e2723]">Soạn thảo Bài thuốc</h3><button onclick="document.getElementById('formulaEditModal').classList.remove('active')" class="text-2xl">&times;</button></div><div class="modal-body space-y-4"><input type="hidden" id="feIndex"><div><label class="song-label">Tên bài thuốc</label><input type="text" id="feName" class="song-input font-bold"></div><div class="bg-white border p-3 rounded-xl"><div class="flex justify-between mb-2"><label class="song-label">Thành phần</label><button onclick="window.addIngredientToFormula()" class="text-[10px] bg-[#8d6e63] text-white px-2 py-1 rounded">+ Thêm vị</button></div><div id="feIngredientList" class="space-y-2 max-h-60 overflow-y-auto"></div></div></div><div class="modal-footer justify-end"><button onclick="window.saveFormula()" class="btn-primary px-6">Xác nhận</button></div></div></div>
+
+    <!-- PRINT AREA -->
+    <div id="printArea" class="hidden">
+        <!-- EASTERN PRESCRIPTION -->
+        <div id="printEast" class="hidden print-section">
+            <div class="text-center border-b border-dashed border-black pb-2 mb-2">
+                <h2 class="text-base font-bold uppercase" id="prTitleEast">PHÒNG KHÁM YHCT</h2>
+                <p class="text-[10px]" id="prDocEast">BS. Đông Y</p>
+                <p class="text-xs font-bold mt-1">ĐƠN THUỐC ĐÔNG Y</p>
+                <p class="text-[10px]" id="prDateEast"></p>
+            </div>
+            <div class="text-[11px] mb-2">
+                <p><b>Bệnh nhân:</b> <span id="prNameEast"></span> <span id="prYearEast"></span></p>
+                <p><b>Chẩn đoán:</b> <span id="prDisEast"></span></p>
+                <p><b>Triệu chứng:</b> <span id="prSymEast"></span></p>
+                <p><b>Số ngày dùng:</b> <span id="prDaysEast"></span> ngày</p>
+                <p><b>Cách dùng:</b> <span id="prUsageEast"></span></p>
+            </div>
+            <table class="w-full text-[11px] border-collapse mb-2">
+                <thead><tr class="border-b border-black"><th class="text-left">Vị thuốc</th><th class="text-right">Số gam</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
+                <tbody id="prTableEast"></tbody>
+            </table>
+            <div class="text-right text-xs mt-3">
+                <p><b>Tổng tiền thuốc Đông Y:</b> <span id="prTotalEast">0đ</span></p>
+            </div>
+            <div class="text-center text-[10px] italic mt-6">
+                <p>Người bệnh dùng thuốc theo chỉ dẫn, tái khám khi hết thuốc.</p>
+                <p class="mt-2">Chúc quý khách mau lành bệnh!</p>
+            </div>
+        </div>
+
+        <!-- WESTERN PRESCRIPTION -->
+        <div id="printWest" class="hidden print-section">
+            <div class="text-center border-b border-dashed border-black pb-2 mb-2">
+                <h2 class="text-base font-bold uppercase" id="prTitleWest">PHÒNG KHÁM YHCT</h2>
+                <p class="text-[10px]" id="prDocWest">BS. Đông Y</p>
+                <p class="text-xs font-bold mt-1">ĐƠN THUỐC TÂY Y</p>
+                <p class="text-[10px]" id="prDateWest"></p>
+            </div>
+            <div class="text-[11px] mb-2">
+                <p><b>Bệnh nhân:</b> <span id="prNameWest"></span> <span id="prYearWest"></span></p>
+                <p><b>Chẩn đoán:</b> <span id="prDisWest"></span></p>
+                <p><b>Số ngày dùng:</b> <span id="prDaysWest"></span> ngày</p>
+                <p><b>Cách dùng:</b> <span id="prUsageWest"></span></p>
+            </div>
+            <table class="w-full text-[11px] border-collapse mb-2">
+                <thead><tr class="border-b border-black"><th class="text-left">Thuốc</th><th class="text-right">Số viên/ngày</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
+                <tbody id="prTableWest"></tbody>
+            </table>
+            <div class="text-right text-xs mt-3">
+                <p><b>Tổng tiền thuốc Tây Y:</b> <span id="prTotalWest">0đ</span></p>
+            </div>
+            <div class="text-center text-[10px] italic mt-6">
+                <p>Uống thuốc đúng liều, đúng giờ theo chỉ định.</p>
+                <p class="mt-2">Chúc quý khách mau lành bệnh!</p>
+            </div>
+        </div>
+
+        <!-- COMBINED PRESCRIPTION -->
+        <div id="printBoth" class="hidden print-section">
+            <div class="text-center border-b border-dashed border-black pb-2 mb-2">
+                <h2 class="text-base font-bold uppercase" id="prTitleBoth">PHÒNG KHÁM YHCT</h2>
+                <p class="text-[10px]" id="prDocBoth">BS. Đông Y</p>
+                <p class="text-xs font-bold mt-1">ĐƠN THUỐC ĐÔNG - TÂY Y KẾT HỢP</p>
+                <p class="text-[10px]" id="prDateBoth"></p>
+            </div>
+            <div class="text-[11px] mb-2">
+                <p><b>Bệnh nhân:</b> <span id="prNameBoth"></span> <span id="prYearBoth"></span></p>
+                <p><b>Chẩn đoán:</b> <span id="prDisBoth"></span></p>
+                <p><b>Triệu chứng:</b> <span id="prSymBoth"></span></p>
+            </div>
+            
+            <div class="mb-4">
+                <h4 class="text-xs font-bold bg-gray-100 p-1">1. THUỐC ĐÔNG Y</h4>
+                <table class="w-full text-[10px] border-collapse">
+                    <thead><tr class="border-b border-gray-300"><th class="text-left">Vị thuốc</th><th class="text-right">Số gam</th><th class="text-right">Số ngày</th><th class="text-right">Cách dùng</th></tr></thead>
+                    <tbody id="prTableBothEast"></tbody>
+                </table>
+            </div>
+            
+            <div class="mb-4">
+                <h4 class="text-xs font-bold bg-gray-100 p-1">2. THUỐC TÂY Y</h4>
+                <table class="w-full text-[10px] border-collapse">
+                    <thead><tr class="border-b border-gray-300"><th class="text-left">Thuốc</th><th class="text-right">Số viên/ngày</th><th class="text-right">Số ngày</th><th class="text-right">Cách dùng</th></tr></thead>
+                    <tbody id="prTableBothWest"></tbody>
+                </table>
+            </div>
+            
+            <div class="text-center text-[10px] italic mt-6">
+                <p>Dùng thuốc theo chỉ dẫn, tái khám khi cần thiết.</p>
+                <p class="mt-2">Chúc quý khách sức khỏe!</p>
+            </div>
+        </div>
+
+        <!-- INVOICE -->
+        <div id="printInvoice" class="hidden print-section">
+            <div class="text-center border-b border-dashed border-black pb-3 mb-3">
+                <h2 class="text-lg font-bold uppercase" id="prTitleInvoice">PHÒNG KHÁM YHCT</h2>
+                <p class="text-[11px]" id="prDocInvoice">BS. Đông Y</p>
+                <p class="text-sm font-bold mt-1">HÓA ĐƠN THANH TOÁN</p>
+                <p class="text-[10px]" id="prDateInvoice"></p>
+            </div>
+            <div class="text-[12px] mb-3">
+                <p><b>Bệnh nhân:</b> <span id="prNameInvoice"></span> <span id="prYearInvoice"></span></p>
+                <p><b>Chẩn đoán:</b> <span id="prDisInvoice"></span></p>
+                <p><b>Ngày khám:</b> <span id="prVisitDateInvoice"></span></p>
+            </div>
+            
+            <table class="w-full text-[12px] border-collapse mb-3">
+                <thead>
+                    <tr class="border-b-2 border-black">
+                        <th class="text-left p-1">Nội dung</th>
+                        <th class="text-right p-1">Số lượng</th>
+                        <th class="text-right p-1">Đơn giá</th>
+                        <th class="text-right p-1">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="prTableInvoice"></tbody>
+                <tfoot class="border-t-2 border-black">
+                    <tr><td colspan="3" class="text-right p-1 font-bold">Tổng tiền thủ thuật:</td><td class="text-right p-1 font-bold" id="prProcTotalInvoice">0đ</td></tr>
+                    <tr><td colspan="3" class="text-right p-1 font-bold">Tổng tiền thuốc Đông Y:</td><td class="text-right p-1 font-bold" id="prEastTotalInvoice">0đ</td></tr>
+                    <tr><td colspan="3" class="text-right p-1 font-bold">Tổng tiền thuốc Tây Y:</td><td class="text-right p-1 font-bold" id="prWestTotalInvoice">0đ</td></tr>
+                    <tr class="bg-gray-100"><td colspan="3" class="text-right p-1 font-bold text-lg">TỔNG CỘNG:</td><td class="text-right p-1 font-bold text-lg" id="prGrandTotalInvoice">0đ</td></tr>
+                    <tr><td colspan="3" class="text-right p-1 text-[11px]">Chiết khấu:</td><td class="text-right p-1 text-[11px]" id="prDiscInvoice">0%</td></tr>
+                    <tr><td colspan="3" class="text-right p-1 font-bold">THANH TOÁN:</td><td class="text-right p-1 font-bold text-red-600" id="prFinalInvoice">0đ</td></tr>
+                </tfoot>
+            </table>
+            
+            <div id="prQrContainerInvoice" class="text-center mt-4">
+                <p class="text-[10px] italic mb-1">Quét mã thanh toán:</p>
+                <img id="prQrInvoice" src="" class="w-32 h-32 object-contain inline-block border border-gray-300">
+            </div>
+            
+            <div class="text-center text-[11px] italic mt-6 pt-3 border-t border-dashed border-gray-400">
+                <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>
+                <p class="mt-1">Chúc quý khách luôn mạnh khỏe và hạnh phúc!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTHER MODALS (Keypad, Analytics, History) -->
     <div id="keypadModal" class="modal"><div class="modal-box w-80 h-auto"><div class="modal-body p-6 flex flex-col items-center"><h3 class="font-bold mb-4" id="keypadTitle">Mật khẩu</h3><div class="flex gap-2 mb-4" id="dotsArea"><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div></div><div class="grid grid-cols-3 gap-3 w-full"><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('1')">1</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('2')">2</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('3')">3</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('4')">4</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('5')">5</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('6')">6</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('7')">7</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('8')">8</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('9')">9</button><div></div><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('0')">0</button><button class="h-14 text-red-500 font-bold" onclick="window.removeDigit()">⌫</button></div><button onclick="window.closeKeypad()" class="mt-4 text-gray-400 font-bold text-sm">Đóng</button></div></div></div>
     <div id="analyticsModal" class="modal"><div class="modal-box max-w-5xl"><div class="modal-header"><h2 class="font-bold text-xl uppercase">Thống Kê & Báo Cáo</h2><button onclick="window.closeModals()" class="text-2xl">&times;</button></div><div class="modal-body"><div class="flex gap-3 mb-4"><select id="anaTimeFilter" onchange="window.renderAnalytics()" class="song-input w-40"><option value="today">Hôm nay</option><option value="month" selected>Tháng này</option><option value="all">Tất cả</option></select><button onclick="window.exportToExcel()" class="btn-glass text-green-700 border-green-200 px-4">📊 Xuất Excel</button><button onclick="window.openBackupModalDirect()" class="btn-primary px-4">💾 Sao lưu Dữ liệu</button></div><div class="h-64 mb-4 border rounded-xl p-2"><canvas id="analyticsChart"></canvas></div><table class="w-full text-sm"><thead><tr class="bg-gray-50 text-left"><th class="p-2">Ngày</th><th class="p-2">Tên</th><th class="p-2">Bệnh</th><th class="p-2 text-right">Thu</th><th class="p-2 text-right">Lãi</th></tr></thead><tbody id="anaTableBody"></tbody></table></div></div></div>
     <div id="hModal" class="modal"><div class="modal-box max-w-2xl"><div class="modal-header"><h2 class="font-bold text-xl serif">Lịch sử: <span id="hName"></span></h2><button onclick="window.closeModals()" class="text-3xl">&times;</button></div><div id="hContent" class="modal-body space-y-3"></div></div></div>
-
-    <div id="printArea" class="hidden">
-        <div class="text-center border-b border-dashed border-black pb-2 mb-2">
-            <h2 class="text-base font-bold uppercase" id="prTitle">PHÒNG KHÁM</h2>
-            <p class="text-[10px]" id="prDoc">BS.</p>
-            <p class="text-xs font-bold mt-1">ĐƠN THUỐC & HÓA ĐƠN</p>
-            <p class="text-[10px]" id="prDate"></p>
-        </div>
-        <div class="text-[11px] mb-2">
-            <p><b>BN:</b> <span id="prName"></span> <span id="prYear"></span></p>
-            <p><b>Chẩn đoán:</b> <span id="prDis"></span></p>
-            <p><b>Triệu chứng/Ghi chú:</b> <span id="prSym"></span></p>
-        </div>
-        <table class="w-full text-[11px] border-collapse mb-2">
-            <thead><tr class="border-b border-black"><th class="text-left">Nội dung</th><th class="text-right">Tiền</th></tr></thead>
-            <tbody id="prTable"></tbody>
-        </table>
-        <div class="text-right text-xs">
-            <p>Tổng: <b id="prTotal"></b></p>
-            <p id="prDiscText" class="italic text-[10px]"></p>
-            <p class="mt-1">Thanh toán: <b id="prFinal"></b></p>
-        </div>
-        
-        <div id="prQrContainer" class="text-center mt-3 hidden">
-            <p class="text-[9px] italic mb-1">Quét mã thanh toán:</p>
-            <img id="prQr" src="" class="w-24 h-24 object-contain inline-block border border-gray-300">
-        </div>
-        
-        <p class="text-center text-[10px] italic mt-4">Cảm ơn và chúc sức khỏe!</p>
-    </div>
 
     <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="window.handleJSONFileSelect(event)">
 
     <script>
         // --- INIT ---
-        try { window.db = JSON.parse(localStorage.getItem('yhct_db_v48') || '[]'); } catch(e) { window.db = []; }
+        try { window.db = JSON.parse(localStorage.getItem('yhct_db_v49') || '[]'); } catch(e) { window.db = []; }
         try { 
-            window.config = JSON.parse(localStorage.getItem('yhct_cfg_v48')) || {}; 
+            window.config = JSON.parse(localStorage.getItem('yhct_cfg_v49')) || {}; 
             // Default config values
             if(!window.config.clinicTitle) window.config.clinicTitle = 'Phòng Khám YHCT';
             if(!window.config.diseases) window.config.diseases = [];
@@ -472,20 +987,42 @@
             window.config = { clinicTitle: 'Phòng Khám YHCT', diseases: [], procs: [], tuChan: {} }; 
         }
 
-        let currentVisit = { step: 1, rxEast: [], rxWest: [], totalProc: 0, manualMedTotal: 0, tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} };
+        let currentVisit = { 
+            step: 1, 
+            rxEast: [], 
+            rxWest: [], 
+            procs: [], 
+            manualMedTotalEast: 0, 
+            manualMedTotalWest: 0,
+            tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} 
+        };
+        
         let tempDiseaseId = null, tempFormulaIndex = null, chartInstance = null, tempPassInput = "", keypadMode = "unlock", currentFilteredVisits = [];
         let numberPadValue = "", currentNumberInput = null;
         let numberPadConfig = { min: 0, max: 9999, defaultValue: 0, isPhone: false };
+        let currentPrintType = 'invoice';
+
+        // Detect iPad for input handling
+        window.isIPad = function() {
+            return /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        };
 
         window.onload = function() { 
             window.render(); 
             window.updateHeader(); 
             window.initDefaultValues();
             window.checkFirstTimeUse();
+            
+            // Fix for iPad inputs
+            if (window.isIPad()) {
+                document.querySelectorAll('.song-input, textarea').forEach(input => {
+                    input.classList.add('ipad-input-fix');
+                });
+            }
         };
         
-        window.saveDb = function() { try { localStorage.setItem('yhct_db_v48', JSON.stringify(window.db)); } catch(e) { alert("Bộ nhớ đầy!"); } }
-        window.saveConfig = function() { localStorage.setItem('yhct_cfg_v48', JSON.stringify(window.config)); window.updateHeader(); }
+        window.saveDb = function() { try { localStorage.setItem('yhct_db_v49', JSON.stringify(window.db)); } catch(e) { alert("Bộ nhớ đầy!"); } }
+        window.saveConfig = function() { localStorage.setItem('yhct_cfg_v49', JSON.stringify(window.config)); window.updateHeader(); }
         
         // --- HEADER & QR FUNCTIONS ---
         window.updateHeader = function() { 
@@ -501,7 +1038,6 @@
             if (window.config.headerBgImage) {
                 header.style.backgroundImage = `url(${window.config.headerBgImage})`;
                 overlay.style.opacity = (window.config.headerOverlayOpacity || 0) / 100;
-                // Switch to transparent mode
                 card.classList.add('transparent-mode');
             } else {
                 header.style.backgroundImage = 'none';
@@ -514,7 +1050,6 @@
             const file = input.files[0];
             if (!file) return;
 
-            // Check file size (approx 2MB limit for base64 safety in localStorage)
             if (file.size > 2000000) {
                 alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB.");
                 input.value = "";
@@ -539,7 +1074,6 @@
             window.config.headerOverlayOpacity = value;
             document.getElementById('overlayValueDisplay').innerText = value + '%';
             document.getElementById('headerOverlay').style.opacity = value / 100;
-            // No saveConfig here to avoid spamming write, save on modal close or specific save button
         }
         
         window.clearHeaderImage = function() {
@@ -563,15 +1097,15 @@
                 document.getElementById('backupModal').classList.add('active');
             }, 10);
         };
-        window.openBackupModal = function() { 
-            document.getElementById('backupModal').classList.add('active'); 
-        };
+        
         window.exportToJSON = function() {
             const blob = new Blob([JSON.stringify({db: window.db, config: window.config}, null, 2)], { type: 'application/json' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_yhct_${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
         };
+        
         window.importFromJSON = function() { document.getElementById('jsonFileInput').click(); };
+        
         window.handleJSONFileSelect = function(e) {
             const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
@@ -596,14 +1130,16 @@
             if(!currentFilteredVisits.length) return alert("Không có dữ liệu");
             const data = currentFilteredVisits.map((v, i) => ({
                 "STT": i+1, "Ngày": v.date, "Tên": v.pName, "Bệnh": v.disease,
-                "Thuốc Đông Y": v.rxEast?.map(m=>`${m.name}(${m.qty}g)`).join(', ')||'',
-                "Thuốc Tây Y": v.rxWest?.map(m=>`${m.name}(${m.qty}v)`).join(', ')||'',
+                "Thuốc Đông Y": v.rxEast?.map(m=>`${m.name}(${m.qty}g x ${m.days} ngày)`).join(', ')||'',
+                "Thuốc Tây Y": v.rxWest?.map(m=>`${m.name}(${m.qty}v x ${m.days} ngày)`).join(', ')||'',
+                "Thủ thuật": v.procs?.map(p=>`${p.name}(${p.days} ngày)`).join(', ')||'',
                 "Tổng thu": v.total, "Lãi": v.total-(v.cost||0)
             }));
             const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Báo cáo");
             XLSX.writeFile(wb, `BaoCao_${new Date().toISOString().split('T')[0]}.xlsx`);
         };
+        
         window.exportFullDataExcel = function() {
             const wb = XLSX.utils.book_new();
             const pData = window.db.map((p,i)=>({"ID":p.id,"Tên":p.name,"SĐT":p.phone}));
@@ -617,6 +1153,7 @@
                 window.createSampleData(); localStorage.setItem('yhct_first_time', 'false');
             }
         };
+        
         window.createSampleData = function() {
             if (window.config.diseases.length===0) window.config.diseases = [{name:"Cảm mạo",sym:"Sốt, sợ lạnh",rxWest:[],eastOptions:[]}];
             if (window.config.procs.length===0) window.config.procs = [{name:"Châm cứu",price:100000}];
@@ -634,20 +1171,26 @@
                 const [min,max] = range.split('-'); numberPadConfig.min = parseInt(min); numberPadConfig.max = parseInt(max);
             }
         };
+        
         window.openPhonePad = function() {
             currentNumberInput = 'pPhone'; numberPadConfig.isPhone = true; numberPadValue = document.getElementById('pPhone').value;
             document.getElementById('numberPadTitle').innerText = 'Số điện thoại';
             document.getElementById('numberPadDisplay').innerText = numberPadValue || "";
             document.getElementById('numberPadModal').classList.add('active');
         };
+        
         window.addNumberPadDigit = function(d) {
             if(numberPadConfig.isPhone) { if(numberPadValue.length<15) numberPadValue+=d; }
             else { if(numberPadValue==="0") numberPadValue=d; else { const n = parseInt(numberPadValue+d); if(n<=numberPadConfig.max) numberPadValue+=d; } }
             document.getElementById('numberPadDisplay').innerText = numberPadValue;
         };
+        
         window.deleteNumberPadDigit = function() { numberPadValue = numberPadValue.slice(0,-1); document.getElementById('numberPadDisplay').innerText = numberPadValue||"0"; };
+        
         window.clearNumberPad = function() { numberPadValue = ""; document.getElementById('numberPadDisplay').innerText = "0"; };
+        
         window.closeNumberPad = function() { document.getElementById('numberPadModal').classList.remove('active'); };
+        
         window.confirmNumberPad = function() {
             if(currentNumberInput) {
                 document.getElementById(currentNumberInput).value = numberPadValue;
@@ -662,16 +1205,30 @@
                     document.getElementById(`proc_disp_${idx}`).innerText = numberPadValue + "%";
                     window.calcTotal();
                 }
+                else if(currentNumberInput.startsWith('med_days_')) {
+                    const parts = currentNumberInput.split('_');
+                    const type = parts[2];
+                    const idx = parts[3];
+                    window.updateMedDays(type, idx, numberPadValue);
+                }
+                else if(currentNumberInput.startsWith('proc_days_')) {
+                    const idx = currentNumberInput.split('_')[2];
+                    window.updateProcDays(idx, numberPadValue);
+                }
             }
             window.closeNumberPad();
         };
         
-        window.updateBpDisplay = function() { document.getElementById('displayBP').innerText = (document.getElementById('vBpSys').value||120)+'/'+(document.getElementById('vBpDia').value||80); };
+        window.updateBpDisplay = function() { 
+            document.getElementById('displayBP').innerText = (document.getElementById('vBpSys').value||120)+'/'+(document.getElementById('vBpDia').value||80); 
+        };
+        
         window.updateHeightWeightDisplay = function() {
             const h = document.getElementById('vHeight').value, w = document.getElementById('vWeight').value;
             document.getElementById('displayHeightWeight').innerText = `${h}cm - ${w}kg`;
             if(h>0 && w>0) document.getElementById('displayBMI').innerText = 'BMI: ' + (w/((h/100)*(h/100))).toFixed(1);
         };
+        
         window.initDefaultValues = function() {
             if(!document.getElementById('vBpSys').value) {
                 document.getElementById('vBpSys').value=120; document.getElementById('vBpDia').value=80;
@@ -682,6 +1239,7 @@
         // --- PATIENT & LIST ---
         let searchTimeout;
         window.debouncedRender = function() { clearTimeout(searchTimeout); searchTimeout = setTimeout(window.render, 250); };
+        
         window.render = function() {
             const list = document.getElementById('list'), kw = document.getElementById('search').value.toLowerCase();
             list.innerHTML = window.db.map(p => {
@@ -692,20 +1250,248 @@
             document.getElementById('monthLabel').innerText = `T${new Date().getMonth()+1}`;
             window.updateProfitDisplay();
         };
+        
         window.handleEdit = function(id,e) { e.stopPropagation(); window.openPatientModal(id); };
         window.handleExam = function(id,e) { e.stopPropagation(); window.startVisit(id); };
-        window.handleDelete = function(id) { if(confirm('Xóa?')) { window.db = window.db.filter(x=>String(x.id)!==String(id)); window.saveDb(); window.render(); } };
+        
+        window.handleDelete = function(id) { 
+            if(confirm('Xóa bệnh nhân này?')) { 
+                window.db = window.db.filter(x=>String(x.id)!==String(id)); 
+                window.saveDb(); 
+                window.render(); 
+            } 
+        };
+        
         window.openPatientModal = function(id=null) {
             document.getElementById('pEditId').value = id||'';
-            if(id) { const p = window.db.find(x=>x.id==id); document.getElementById('pName').value=p.name; document.getElementById('pYear').value=p.year; document.getElementById('pPhone').value=p.phone; document.getElementById('pAddress').value=p.address; }
-            else { document.getElementById('pName').value=''; document.getElementById('pYear').value=''; document.getElementById('pPhone').value=''; document.getElementById('pAddress').value=''; }
+            if(id) { 
+                const p = window.db.find(x=>x.id==id); 
+                document.getElementById('pName').value=p.name; 
+                document.getElementById('pYear').value=p.year; 
+                document.getElementById('pPhone').value=p.phone; 
+                document.getElementById('pAddress').value=p.address; 
+            }
+            else { 
+                document.getElementById('pName').value=''; 
+                document.getElementById('pYear').value=''; 
+                document.getElementById('pPhone').value=''; 
+                document.getElementById('pAddress').value=''; 
+            }
             document.getElementById('pModal').classList.add('active');
         };
+        
         window.savePatient = function() {
             const name = document.getElementById('pName').value; if(!name) return alert("Nhập tên!");
-            const id = document.getElementById('pEditId').value, p = { id: id||Date.now().toString(), name: name, year: document.getElementById('pYear').value, phone: document.getElementById('pPhone').value, address: document.getElementById('pAddress').value, visits: id?window.db.find(x=>x.id==id).visits:[] };
-            if(id) window.db[window.db.findIndex(x=>x.id==id)] = p; else window.db.unshift(p);
+            const id = document.getElementById('pEditId').value, p = { 
+                id: id||Date.now().toString(), 
+                name: name, 
+                year: document.getElementById('pYear').value, 
+                phone: document.getElementById('pPhone').value, 
+                address: document.getElementById('pAddress').value, 
+                visits: id?window.db.find(x=>x.id==id).visits:[] 
+            };
+            if(id) window.db[window.db.findIndex(x=>x.id==id)] = p; 
+            else window.db.unshift(p);
             window.saveDb(); window.closeModals(); window.render();
+        };
+
+        // --- DISEASE MANAGEMENT FUNCTIONS ---
+        window.addNewDisease = function() {
+            // Close settings modal first
+            window.closeModals();
+            
+            // Open disease modal
+            setTimeout(() => {
+                document.getElementById('diseaseModalTitle').innerText = 'Thêm Bệnh Mới';
+                document.getElementById('diseaseEditIndex').value = '';
+                document.getElementById('diseaseName').value = '';
+                document.getElementById('diseaseSymptoms').value = '';
+                document.getElementById('diseaseEastName').value = '';
+                
+                // Clear containers
+                document.getElementById('eastIngredientsContainer').innerHTML = '';
+                document.getElementById('westMedicinesContainer').innerHTML = '';
+                
+                // Add one empty ingredient and medicine row
+                window.addEastIngredient();
+                window.addWestMedicine();
+                
+                document.getElementById('diseaseModal').classList.add('active');
+            }, 100);
+        };
+
+        window.addEastIngredient = function() {
+            const container = document.getElementById('eastIngredientsContainer');
+            const index = container.children.length;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="east-ingredient-name song-input text-sm" placeholder="Tên vị thuốc" value=""></td>
+                <td><input type="number" class="east-ingredient-qty song-input text-sm" placeholder="Số gam" value="10"></td>
+                <td><input type="number" class="east-ingredient-days song-input text-sm" placeholder="Số ngày" value="3"></td>
+                <td><input type="number" class="east-ingredient-price song-input text-sm" placeholder="Đơn giá" value="0"></td>
+                <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
+            `;
+            container.appendChild(row);
+        };
+
+        window.addWestMedicine = function() {
+            const container = document.getElementById('westMedicinesContainer');
+            const index = container.children.length;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="west-medicine-name song-input text-sm" placeholder="Tên thuốc" value=""></td>
+                <td><input type="number" class="west-medicine-qty song-input text-sm" placeholder="Số viên/ngày" value="2"></td>
+                <td><input type="number" class="west-medicine-days song-input text-sm" placeholder="Số ngày" value="3"></td>
+                <td><input type="number" class="west-medicine-price song-input text-sm" placeholder="Đơn giá" value="0"></td>
+                <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
+            `;
+            container.appendChild(row);
+        };
+
+        window.editDisease = function(index) {
+            const disease = window.config.diseases[index];
+            document.getElementById('diseaseModalTitle').innerText = 'Sửa Bệnh';
+            document.getElementById('diseaseEditIndex').value = index;
+            document.getElementById('diseaseName').value = disease.name || '';
+            document.getElementById('diseaseSymptoms').value = disease.sym || '';
+            
+            // Clear containers
+            document.getElementById('eastIngredientsContainer').innerHTML = '';
+            document.getElementById('westMedicinesContainer').innerHTML = '';
+            
+            // Load Eastern ingredients
+            if (disease.eastOptions && disease.eastOptions.length > 0) {
+                const eastOption = disease.eastOptions[0];
+                document.getElementById('diseaseEastName').value = eastOption.name || '';
+                
+                if (eastOption.ingredients && eastOption.ingredients.length > 0) {
+                    eastOption.ingredients.forEach(ing => {
+                        const container = document.getElementById('eastIngredientsContainer');
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><input type="text" class="east-ingredient-name song-input text-sm" placeholder="Tên vị thuốc" value="${ing.name || ''}"></td>
+                            <td><input type="number" class="east-ingredient-qty song-input text-sm" placeholder="Số gam" value="${ing.qty || 0}"></td>
+                            <td><input type="number" class="east-ingredient-days song-input text-sm" placeholder="Số ngày" value="${ing.days || 1}"></td>
+                            <td><input type="number" class="east-ingredient-price song-input text-sm" placeholder="Đơn giá" value="${ing.price || 0}"></td>
+                            <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
+                        `;
+                        container.appendChild(row);
+                    });
+                } else {
+                    window.addEastIngredient();
+                }
+            } else {
+                window.addEastIngredient();
+            }
+            
+            // Load Western medicines
+            if (disease.rxWest && disease.rxWest.length > 0) {
+                disease.rxWest.forEach(med => {
+                    const container = document.getElementById('westMedicinesContainer');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><input type="text" class="west-medicine-name song-input text-sm" placeholder="Tên thuốc" value="${med.name || ''}"></td>
+                        <td><input type="number" class="west-medicine-qty song-input text-sm" placeholder="Số viên/ngày" value="${med.qty || 0}"></td>
+                        <td><input type="number" class="west-medicine-days song-input text-sm" placeholder="Số ngày" value="${med.days || 1}"></td>
+                        <td><input type="number" class="west-medicine-price song-input text-sm" placeholder="Đơn giá" value="${med.price || 0}"></td>
+                        <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
+                    `;
+                    container.appendChild(row);
+                });
+            } else {
+                window.addWestMedicine();
+            }
+            
+            document.getElementById('diseaseModal').classList.add('active');
+        };
+
+        window.saveDisease = function() {
+            const name = document.getElementById('diseaseName').value.trim();
+            if (!name) {
+                alert('Vui lòng nhập tên bệnh');
+                return;
+            }
+            
+            const symptoms = document.getElementById('diseaseSymptoms').value.trim();
+            const eastName = document.getElementById('diseaseEastName').value.trim() || 'Bài thuốc mẫu';
+            
+            // Collect Eastern ingredients
+            const eastIngredients = [];
+            document.querySelectorAll('#eastIngredientsContainer tr').forEach(row => {
+                const name = row.querySelector('.east-ingredient-name').value.trim();
+                const qty = parseInt(row.querySelector('.east-ingredient-qty').value) || 0;
+                const days = parseInt(row.querySelector('.east-ingredient-days').value) || 1;
+                const price = parseInt(row.querySelector('.east-ingredient-price').value) || 0;
+                
+                if (name) {
+                    eastIngredients.push({
+                        name: name,
+                        qty: qty,
+                        days: days,
+                        price: price
+                    });
+                }
+            });
+            
+            // Collect Western medicines
+            const rxWest = [];
+            document.querySelectorAll('#westMedicinesContainer tr').forEach(row => {
+                const name = row.querySelector('.west-medicine-name').value.trim();
+                const qty = parseInt(row.querySelector('.west-medicine-qty').value) || 0;
+                const days = parseInt(row.querySelector('.west-medicine-days').value) || 1;
+                const price = parseInt(row.querySelector('.west-medicine-price').value) || 0;
+                
+                if (name) {
+                    rxWest.push({
+                        name: name,
+                        qty: qty,
+                        days: days,
+                        price: price
+                    });
+                }
+            });
+            
+            const disease = {
+                name: name,
+                sym: symptoms,
+                rxWest: rxWest,
+                eastOptions: eastIngredients.length > 0 ? [{
+                    name: eastName,
+                    ingredients: eastIngredients
+                }] : []
+            };
+            
+            const editIndex = document.getElementById('diseaseEditIndex').value;
+            if (editIndex !== '') {
+                // Edit existing disease
+                window.config.diseases[editIndex] = disease;
+            } else {
+                // Add new disease
+                window.config.diseases.push(disease);
+            }
+            
+            window.saveConfig();
+            window.renderDiseaseSettings();
+            window.closeModals();
+        };
+
+        window.deleteDisease = function(index) {
+            if (confirm('Bạn có chắc chắn muốn xóa bệnh này?')) {
+                window.config.diseases.splice(index, 1);
+                window.saveConfig();
+                window.renderDiseaseSettings();
+            }
+        };
+
+        window.renderDiseaseSettings = function() { 
+            document.getElementById('diseaseList').innerHTML = window.config.diseases.map((d,i)=>`
+                <div class="flex justify-between items-center p-3 border border-[#eee] rounded-lg bg-white shadow-sm">
+                    <div class="font-bold text-sm text-[#3e2723]">${d.name}</div>
+                    <div class="flex gap-2">
+                        <button onclick="window.editDisease(${i})" class="text-xs px-3 py-1 bg-[#efebe9] rounded font-bold text-[#5d4037]">SỬA</button>
+                        <button onclick="window.deleteDisease(${i})" class="text-xs px-3 py-1 bg-red-50 rounded text-red-600">XÓA</button>
+                    </div>
+                </div>`).join(''); 
         };
 
         // --- VISIT ---
@@ -713,117 +1499,387 @@
             const p = window.db.find(x=>x.id==pid); if(!p) return;
             document.getElementById('vPid').value = pid; document.getElementById('vVisitId').value = vid||'';
             document.getElementById('vPatientName').innerText = p.name;
-            currentVisit = { step: 1, rxEast: [], rxWest: [], totalProc: 0, manualMedTotal: 0, tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} };
+            currentVisit = { 
+                step: 1, 
+                rxEast: [], 
+                rxWest: [], 
+                procs: [], 
+                manualMedTotalEast: 0, 
+                manualMedTotalWest: 0,
+                tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} 
+            };
+            
             // Reset fields
             document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('vDiseaseInput').value = ''; document.getElementById('vSpecial').value = '';
             document.getElementById('vCost').value = 0; document.getElementById('vDiscountPercent').value = 0;
             document.getElementById('discountBtn').innerText = '0% ▼';
+            
             // Render basic UI
             document.getElementById('vDiseaseSelect').innerHTML = '<option value="">-- Chọn bệnh mẫu --</option>' + window.config.diseases.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
             window.renderProcList(); window.renderMedList('east'); window.renderMedList('west');
+            
             // Populate if edit
             if(vid) {
                 const v = p.visits.find(x=>x.id==vid);
                 if(v) {
-                    document.getElementById('vDate').value = v.date; document.getElementById('vDiseaseInput').value = v.disease;
-                    document.getElementById('vSpecial').value = v.symptoms; document.getElementById('vCost').value = v.cost;
-                    document.getElementById('vDiscountPercent').value = v.disc||0; document.getElementById('discountBtn').innerText = (v.disc||0)+'% ▼';
+                    document.getElementById('vDate').value = v.date; 
+                    document.getElementById('vDiseaseInput').value = v.disease;
+                    document.getElementById('vSpecial').value = v.symptoms; 
+                    document.getElementById('vCost').value = v.cost;
+                    document.getElementById('vDiscountPercent').value = v.disc||0; 
+                    document.getElementById('discountBtn').innerText = (v.disc||0)+'% ▼';
                     if(v.tuChan) currentVisit.tuChan = v.tuChan;
                     if(v.vong) document.getElementById('vVongExtra').value = v.vong;
-                    currentVisit.rxEast = JSON.parse(JSON.stringify(v.rxEast)); currentVisit.rxWest = JSON.parse(JSON.stringify(v.rxWest));
-                    currentVisit.manualMedTotal = v.medPrice;
-                    document.getElementById('displayMedTotalInput').value = v.medPrice;
-                    window.renderMedList('east'); window.renderMedList('west'); window.calcTotal();
+                    
+                    currentVisit.rxEast = JSON.parse(JSON.stringify(v.rxEast||[])); 
+                    currentVisit.rxWest = JSON.parse(JSON.stringify(v.rxWest||[]));
+                    currentVisit.procs = JSON.parse(JSON.stringify(v.procs||[]));
+                    
+                    currentVisit.manualMedTotalEast = v.medPriceEast || 0;
+                    currentVisit.manualMedTotalWest = v.medPriceWest || 0;
+                    
+                    window.renderMedList('east'); 
+                    window.renderMedList('west'); 
+                    window.renderProcList();
+                    window.calcTotal();
                 }
             }
-            window.goToStep(1); document.getElementById('vModal').classList.add('active');
+            window.goToStep(1); 
+            document.getElementById('vModal').classList.add('active');
         };
 
+        // --- PROCEDURES ---
+        window.renderProcList = function() {
+            const container = document.getElementById('vProcList');
+            container.innerHTML = '';
+            
+            currentVisit.procs.forEach((proc, idx) => {
+                const procTemplate = window.config.procs.find(p => p.name === proc.name);
+                const price = procTemplate ? procTemplate.price : proc.price;
+                
+                const procDiv = document.createElement('div');
+                procDiv.className = 'procedure-item';
+                procDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.removeProcedure(${idx})" class="text-red-500 font-bold text-lg">×</button>
+                            <div>
+                                <div class="font-bold text-sm text-[#3e2723]">${proc.name}</div>
+                                <div class="text-xs text-gray-500">${price.toLocaleString()}đ/lần</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500">Giảm:</span>
+                            <button onclick="window.openNumberPad('proc_disc_${idx}', 'Giảm giá (%)', '0-100', ${proc.discount||0})" class="discount-btn text-xs">${proc.discount||0}%</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="song-label text-[10px]">Số ngày</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" min="1" value="${proc.days||1}" 
+                                       onchange="window.updateProcDays(${idx}, this.value)"
+                                       class="days-input ipad-input-fix">
+                                <span class="text-xs">ngày</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="song-label text-[10px]">Ghi chú buổi</label>
+                            <div class="flex gap-1">
+                                <button class="time-btn ${(proc.note||'').includes('Sáng')?'active':''}" 
+                                        onclick="window.toggleProcNote(${idx}, 'Sáng')">Sáng</button>
+                                <button class="time-btn ${(proc.note||'').includes('Trưa')?'active':''}" 
+                                        onclick="window.toggleProcNote(${idx}, 'Trưa')">Trưa</button>
+                                <button class="time-btn ${(proc.note||'').includes('Chiều')?'active':''}" 
+                                        onclick="window.toggleProcNote(${idx}, 'Chiều')">Chiều</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <input type="text" value="${proc.note||''}" 
+                               onchange="window.updateProcNoteText(${idx}, this.value)"
+                               placeholder="Ghi chú khác..." 
+                               class="song-input text-xs py-1 ipad-input-fix">
+                    </div>
+                    <div class="text-right text-xs font-bold mt-1">
+                        Thành tiền: ${((price * (proc.days||1)) * (1 - (proc.discount||0)/100)).toLocaleString()}đ
+                    </div>
+                `;
+                container.appendChild(procDiv);
+            });
+            
+            // Add button to add new procedure
+            if (currentVisit.procs.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <p>Chưa có thủ thuật nào</p>
+                        <button onclick="window.addProcedureRow()" class="mt-2 text-blue-600 text-sm underline">+ Thêm thủ thuật</button>
+                    </div>
+                `;
+            }
+        };
+        
+        window.addProcedureRow = function() {
+            // Show selection modal or directly add from config
+            if (window.config.procs.length === 0) {
+                alert("Chưa có dịch vụ thủ thuật nào trong cài đặt. Vui lòng thêm dịch vụ trước.");
+                return;
+            }
+            
+            // Create a simple selection
+            const procName = prompt("Nhập tên thủ thuật (hoặc chọn từ danh sách):\n" + 
+                                  window.config.procs.map(p => p.name).join(", "));
+            if (!procName) return;
+            
+            const procTemplate = window.config.procs.find(p => p.name === procName);
+            const price = procTemplate ? procTemplate.price : 0;
+            
+            currentVisit.procs.push({
+                name: procName,
+                price: price,
+                days: 1,
+                discount: 0,
+                note: ''
+            });
+            
+            window.renderProcList();
+            window.calcTotal();
+        };
+        
+        window.removeProcedure = function(idx) {
+            if (confirm("Xóa thủ thuật này?")) {
+                currentVisit.procs.splice(idx, 1);
+                window.renderProcList();
+                window.calcTotal();
+            }
+        };
+        
+        window.updateProcDays = function(idx, days) {
+            days = parseInt(days) || 1;
+            if (days < 1) days = 1;
+            currentVisit.procs[idx].days = days;
+            window.renderProcList();
+            window.calcTotal();
+        };
+        
+        window.toggleProcNote = function(idx, time) {
+            const proc = currentVisit.procs[idx];
+            const note = proc.note || '';
+            const times = note.split(',').filter(t => t.trim());
+            
+            if (times.includes(time)) {
+                // Remove time
+                const newTimes = times.filter(t => t !== time);
+                proc.note = newTimes.join(', ');
+            } else {
+                // Add time
+                times.push(time);
+                proc.note = times.join(', ');
+            }
+            
+            window.renderProcList();
+        };
+        
+        window.updateProcNoteText = function(idx, text) {
+            currentVisit.procs[idx].note = text;
+        };
+
+        // --- MEDICINES ---
         window.loadDiseaseSuggestions = function() {
             const dName = document.getElementById('vDiseaseSelect').value;
             const box = document.getElementById('suggestedSymptomsBox'), preArea = document.getElementById('eastPresetsArea');
             if(!dName) { box.classList.add('hidden'); preArea.classList.add('hidden'); return; }
             const d = window.config.diseases.find(x=>x.name===dName);
             if(d) {
-                if(d.sym) { box.classList.remove('hidden'); document.getElementById('symptomButtons').innerHTML = d.sym.split(',').map(s=>`<span onclick="document.getElementById('vSpecial').value+=(document.getElementById('vSpecial').value?', ':'')+'${s.trim()}'" class="med-chip">${s.trim()}</span>`).join(''); }
+                if(d.sym) { 
+                    box.classList.remove('hidden'); 
+                    document.getElementById('symptomButtons').innerHTML = d.sym.split(',').map(s=>`
+                        <span onclick="document.getElementById('vSpecial').value+=(document.getElementById('vSpecial').value?', ':'')+'${s.trim()}'" 
+                              class="med-chip">${s.trim()}</span>`).join(''); 
+                }
                 else box.classList.add('hidden');
-                currentVisit.rxWest = JSON.parse(JSON.stringify(d.rxWest||[])); window.renderMedList('west');
-                if(d.eastOptions?.length) { preArea.classList.remove('hidden'); document.getElementById('eastPresetButtons').innerHTML = d.eastOptions.map((o,i)=>`<div class="med-chip" onclick="window.applyEasternSample(${i})">${o.name}</div>`).join(''); }
+                
+                currentVisit.rxWest = JSON.parse(JSON.stringify(d.rxWest||[])); 
+                window.renderMedList('west');
+                
+                if(d.eastOptions?.length) { 
+                    preArea.classList.remove('hidden'); 
+                    document.getElementById('eastPresetButtons').innerHTML = d.eastOptions.map((o,i)=>`
+                        <div class="med-chip" onclick="window.applyEasternSample(${i})">${o.name}</div>`).join(''); 
+                }
                 else preArea.classList.add('hidden');
                 window.calcTotal();
             }
         };
+        
         window.applyEasternSample = function(i) {
             const d = window.config.diseases.find(x=>x.name===document.getElementById('vDiseaseSelect').value);
-            if(d && d.eastOptions[i]) { currentVisit.rxEast = JSON.parse(JSON.stringify(d.eastOptions[i].ingredients)); window.renderMedList('east'); window.autoCalcMedTotal(); }
+            if(d && d.eastOptions[i]) { 
+                currentVisit.rxEast = JSON.parse(JSON.stringify(d.eastOptions[i].ingredients)); 
+                window.renderMedList('east'); 
+                window.autoCalcMedTotal(); 
+            }
         };
+        
         window.renderMedList = function(type) {
             const list = document.getElementById(type==='east'?'vMedListEast':'vMedListWest');
             const data = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
-            list.innerHTML = data.map((m,i)=>`<div class="flex gap-2 items-center mb-2"><input type="text" value="${m.name}" onchange="window.updateMed('${type}',${i},'name',this.value)" class="flex-grow text-sm font-bold p-2 border-b song-input" placeholder="Tên"><input type="number" value="${m.qty}" onchange="window.updateMed('${type}',${i},'qty',this.value)" class="w-16 text-center text-sm p-2 border rounded song-input"><span class="text-xs text-gray-500">${type==='east'?'g':'v'}</span><input type="number" value="${m.price||0}" onchange="window.updateMed('${type}',${i},'price',this.value)" class="w-20 text-right text-xs p-2 border rounded song-input"><button onclick="window.removeMed('${type}',${i})" class="text-red-400 font-bold px-2">×</button></div>`).join('');
+            
+            list.innerHTML = data.map((m,i)=>`
+                <div class="visit-medicine-row">
+                    <button onclick="window.removeMed('${type}',${i})" class="med-actions text-red-400 font-bold px-2">×</button>
+                    <input type="text" value="${m.name}" onchange="window.updateMed('${type}',${i},'name',this.value)" 
+                           class="med-name song-input ipad-input-fix" placeholder="Tên thuốc">
+                    <input type="number" value="${m.qty}" onchange="window.updateMed('${type}',${i},'qty',this.value)" 
+                           class="med-qty song-input ipad-input-fix text-center" placeholder="Số lượng">
+                    <input type="number" value="${m.days||1}" onchange="window.updateMedDays('${type}',${i},this.value)" 
+                           class="med-days song-input ipad-input-fix text-center" placeholder="Ngày">
+                    <input type="number" value="${m.price||0}" onchange="window.updateMed('${type}',${i},'price',this.value)" 
+                           class="med-price song-input ipad-input-fix text-right" placeholder="Đơn giá">
+                    <div class="med-time">
+                        <label class="text-[10px] text-gray-500 block mb-1">Cách dùng</label>
+                        <div class="visit-time-buttons">
+                            <button class="time-btn ${(m.usage||'').includes('Sáng')?'active':''}" 
+                                    onclick="window.toggleMedUsage('${type}',${i},'Sáng')">Sáng</button>
+                            <button class="time-btn ${(m.usage||'').includes('Trưa')?'active':''}" 
+                                    onclick="window.toggleMedUsage('${type}',${i},'Trưa')">Trưa</button>
+                            <button class="time-btn ${(m.usage||'').includes('Chiều')?'active':''}" 
+                                    onclick="window.toggleMedUsage('${type}',${i},'Chiều')">Chiều</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            if (data.length === 0) {
+                list.innerHTML = `<div class="text-center py-4 text-gray-400 text-sm">Chưa có thuốc nào</div>`;
+            }
         };
-        window.addMedRow = function(type) { (type==='east'?currentVisit.rxEast:currentVisit.rxWest).push({name:"",qty:1,price:0}); window.renderMedList(type); };
-        window.updateMed = function(type,i,f,v) { (type==='east'?currentVisit.rxEast:currentVisit.rxWest)[i][f] = (f==='qty'||f==='price')?parseFloat(v):v; window.autoCalcMedTotal(); };
-        window.removeMed = function(type,i) { (type==='east'?currentVisit.rxEast:currentVisit.rxWest).splice(i,1); window.renderMedList(type); window.autoCalcMedTotal(); };
+        
+        window.addMedRow = function(type) { 
+            (type==='east'?currentVisit.rxEast:currentVisit.rxWest).push({
+                name:"", qty:1, days:1, price:0, usage:""
+            }); 
+            window.renderMedList(type); 
+        };
+        
+        window.updateMed = function(type,i,f,v) { 
+            const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
+            meds[i][f] = (f==='qty'||f==='price')?parseFloat(v):v; 
+            window.autoCalcMedTotal(); 
+        };
+        
+        window.updateMedDays = function(type,i,days) {
+            const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
+            days = parseInt(days) || 1;
+            if (days < 1) days = 1;
+            meds[i].days = days;
+            window.autoCalcMedTotal();
+        };
+        
+        window.toggleMedUsage = function(type,i,time) {
+            const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
+            const med = meds[i];
+            const usage = med.usage || '';
+            const times = usage.split(',').filter(t => t.trim());
+            
+            if (times.includes(time)) {
+                // Remove time
+                const newTimes = times.filter(t => t !== time);
+                med.usage = newTimes.join(', ');
+            } else {
+                // Add time
+                times.push(time);
+                med.usage = times.join(', ');
+            }
+            
+            window.renderMedList(type);
+        };
+        
+        window.removeMed = function(type,i) { 
+            (type==='east'?currentVisit.rxEast:currentVisit.rxWest).splice(i,1); 
+            window.renderMedList(type); 
+            window.autoCalcMedTotal(); 
+        };
+        
         window.autoCalcMedTotal = function() {
-            let t = 0;
-            currentVisit.rxEast.forEach(m=>t+=(m.qty||0)*(m.price||0));
-            currentVisit.rxWest.forEach(m=>t+=(m.qty||0)*(m.price||0));
-            document.getElementById('displayMedTotalInput').value = t; currentVisit.manualMedTotal = t; window.calcTotal();
-        };
-        window.manualUpdateMedTotal = function() { currentVisit.manualMedTotal = parseFloat(document.getElementById('displayMedTotalInput').value)||0; window.calcTotal(); };
-        window.calcTotal = function() {
-            let pt = 0;
-            window.config.procs.forEach((p,i) => {
-                const cb = document.getElementById(`proc_${i}`);
-                if(cb && cb.checked) {
-                    const disc = parseInt(document.getElementById(`proc_disc_${i}`).value)||0;
-                    pt += Math.round(p.price * (1 - disc/100));
-                }
+            let eastTotal = 0;
+            let westTotal = 0;
+            
+            currentVisit.rxEast.forEach(m=>{
+                eastTotal += (m.qty||0) * (m.price||0) * (m.days||1);
             });
-            currentVisit.totalProc = pt;
-            document.getElementById('displayProcTotal').innerText = pt.toLocaleString()+'đ';
-            const gt = currentVisit.manualMedTotal + pt;
-            document.getElementById('displayGrandTotal').innerText = gt.toLocaleString()+'đ';
+            
+            currentVisit.rxWest.forEach(m=>{
+                westTotal += (m.qty||0) * (m.price||0) * (m.days||1);
+            });
+            
+            currentVisit.manualMedTotalEast = eastTotal;
+            currentVisit.manualMedTotalWest = westTotal;
+            
+            document.getElementById('displayMedTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
+            document.getElementById('displayMedTotalWest').innerText = westTotal.toLocaleString() + 'đ';
+            
+            window.calcTotal();
+        };
+        
+        window.calcTotal = function() {
+            let procTotal = 0;
+            
+            currentVisit.procs.forEach(proc => {
+                const procTemplate = window.config.procs.find(p => p.name === proc.name);
+                const price = procTemplate ? procTemplate.price : proc.price;
+                procTotal += Math.round(price * (proc.days||1) * (1 - (proc.discount||0)/100));
+            });
+            
+            const eastTotal = currentVisit.manualMedTotalEast;
+            const westTotal = currentVisit.manualMedTotalWest;
+            const total = eastTotal + westTotal + procTotal;
+            
+            document.getElementById('displayProcTotal').innerText = procTotal.toLocaleString() + 'đ';
+            document.getElementById('displayGrandTotal').innerText = total.toLocaleString() + 'đ';
+            
             const discP = parseInt(document.getElementById('vDiscountPercent').value)||0;
-            document.getElementById('finalTotal').innerText = Math.round(gt*(1-discP/100)).toLocaleString()+'đ';
+            document.getElementById('finalTotal').innerText = Math.round(total*(1-discP/100)).toLocaleString() + 'đ';
         };
 
-        window.renderProcList = function() {
-            document.getElementById('vProcList').innerHTML = window.config.procs.map((p,i)=>`
-                <div class="flex items-center justify-between p-4 border rounded-xl bg-white mb-2 shadow-sm">
-                    <div class="flex items-center gap-3"><input type="checkbox" id="proc_${i}" class="w-5 h-5 accent-[#5d4037]" onchange="window.calcTotal()"><div><label for="proc_${i}" class="text-sm font-bold text-[#3e2723]">${p.name}</label><div class="text-xs text-gray-500">${p.price.toLocaleString()}đ</div></div></div>
-                    <div class="flex items-center gap-2"><span class="text-xs text-gray-500">Giảm:</span><button id="proc_disp_${i}" onclick="window.openNumberPad('proc_disc_${i}', 'Giảm giá (%)', '0-100', 0)" class="discount-btn">0%</button><input type="hidden" id="proc_disc_${i}" value="0"></div>
-                </div>`).join('');
-        };
-
-        // --- NAVIGATION & TỨ CHẨN ---
+        // --- TỨ CHẨN ---
         window.renderTuchanChips = function() {
             ['vong','van','vanhoi','thiet','thietchan','machchan'].forEach(sec => {
                 const c = document.getElementById(`tuchan${sec.charAt(0).toUpperCase()+sec.slice(1)}Buttons`);
-                if(c) c.innerHTML = (window.config.tuChan[sec]||[]).map(t=>`<div class="tuchan-chip" onclick="window.toggleTuchanChip('${sec}','${t.replace(/'/g,"\\'")}')">${t}</div>`).join('');
+                if(c) c.innerHTML = (window.config.tuChan[sec]||[]).map(t=>`
+                    <div class="tuchan-chip ${currentVisit.tuChan[sec].includes(t)?'active':''}" 
+                         onclick="window.toggleTuchanChip('${sec}','${t.replace(/'/g,"\\'")}')">${t}</div>`).join('');
             });
         };
+        
         window.toggleTuchanChip = function(sec,t) {
             const idx = currentVisit.tuChan[sec].indexOf(t);
-            const chips = document.querySelectorAll(`#tuchan${sec.charAt(0).toUpperCase()+sec.slice(1)}Buttons .tuchan-chip`);
-            chips.forEach(c => {
-                if(c.innerText===t) {
-                    if(idx===-1) { c.classList.add('active'); currentVisit.tuChan[sec].push(t); }
-                    else { c.classList.remove('active'); currentVisit.tuChan[sec].splice(idx,1); }
-                }
-            });
+            if(idx===-1) { 
+                currentVisit.tuChan[sec].push(t); 
+            } else { 
+                currentVisit.tuChan[sec].splice(idx,1); 
+            }
+            window.renderTuchanChips();
         };
+        
+        // --- NAVIGATION ---
         window.goToStep = function(s) {
             currentVisit.step = s;
-            document.querySelectorAll('.step-content').forEach(e => { e.classList.remove('active'); e.classList.add('hidden'); });
-            document.getElementById('step'+s).classList.remove('hidden'); document.getElementById('step'+s).classList.add('active');
+            document.querySelectorAll('.step-content').forEach(e => { 
+                e.classList.remove('active'); 
+                e.classList.add('hidden'); 
+            });
+            document.getElementById('step'+s).classList.remove('hidden'); 
+            document.getElementById('step'+s).classList.add('active');
+            
             document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i+1===s));
+            
             document.getElementById('btnBack').classList.toggle('hidden', s===1);
             document.getElementById('btnNext').classList.toggle('hidden', s===4);
             document.getElementById('btnSaveOnly').classList.toggle('hidden', s!==4);
             document.getElementById('btnPrint').classList.toggle('hidden', s!==4);
+            
             if(s===1) window.renderTuchanChips();
             if(s===3||s===4) window.calcTotal();
             
@@ -839,17 +1895,18 @@
                 }
             }
         };
+        
         window.nextStep = function() { if(currentVisit.step<4) window.goToStep(currentVisit.step+1); };
         window.prevStep = function() { if(currentVisit.step>1) window.goToStep(currentVisit.step-1); };
 
         // --- SAVE & PRINT ---
         window.saveOnly = function() { window.processSave(false); };
         window.saveAndPrint = function() { window.processSave(true); };
+        
         window.processSave = function(print) {
             try {
-                const pid = document.getElementById('vPid').value; if(!pid) throw new Error("Mất kết nối bệnh nhân");
-                const procs = []; 
-                window.config.procs.forEach((p,i)=>{ const cb=document.getElementById(`proc_${i}`); if(cb&&cb.checked) { const d=parseInt(document.getElementById(`proc_disc_${i}`).value)||0; procs.push(`${p.name} (Giảm ${d}%)`); } });
+                const pid = document.getElementById('vPid').value; 
+                if(!pid) throw new Error("Mất kết nối bệnh nhân");
                 
                 const visit = {
                     id: parseInt(document.getElementById('vVisitId').value)||Date.now(),
@@ -858,8 +1915,11 @@
                     symptoms: document.getElementById('vSpecial').value,
                     tuChan: currentVisit.tuChan,
                     vong: document.getElementById('vVongExtra').value,
-                    rxEast: currentVisit.rxEast, rxWest: currentVisit.rxWest,
-                    medPrice: currentVisit.manualMedTotal, procTotal: currentVisit.totalProc, procs: procs.join(', '),
+                    rxEast: currentVisit.rxEast, 
+                    rxWest: currentVisit.rxWest,
+                    procs: currentVisit.procs,
+                    medPriceEast: currentVisit.manualMedTotalEast, 
+                    medPriceWest: currentVisit.manualMedTotalWest,
                     total: parseInt(document.getElementById('finalTotal').innerText.replace(/[^\d]/g,'')),
                     cost: parseInt(document.getElementById('vCost').value)||0,
                     disc: parseInt(document.getElementById('vDiscountPercent').value)||0,
@@ -870,58 +1930,267 @@
                 if(pIdx>-1) {
                     if(!window.db[pIdx].visits) window.db[pIdx].visits=[];
                     const vIdx = window.db[pIdx].visits.findIndex(v=>v.id===visit.id);
-                    if(vIdx>-1) window.db[pIdx].visits[vIdx]=visit; else window.db[pIdx].visits.unshift(visit);
+                    if(vIdx>-1) window.db[pIdx].visits[vIdx]=visit; 
+                    else window.db[pIdx].visits.unshift(visit);
                     window.saveDb();
-                    if(print) window.printInvoice(window.db[pIdx], visit); else alert("Đã lưu!");
-                    window.closeModals(); window.render();
+                    
+                    if(print) {
+                        window.preparePrint('invoice');
+                    } else {
+                        alert("Đã lưu thông tin khám bệnh!");
+                        window.closeModals(); 
+                        window.render();
+                    }
                 }
             } catch(e) { alert("Lỗi: "+e.message); }
         };
         
-        window.printInvoice = function(p,v) {
-            document.getElementById('prTitle').innerText = window.config.clinicTitle;
-            document.getElementById('prDoc').innerText = 'BS. ' + (window.config.doctorName||'Đông Y');
-            document.getElementById('prDate').innerText = 'Ngày: ' + v.date.split('-').reverse().join('/');
-            document.getElementById('prName').innerText = p.name; document.getElementById('prYear').innerText = p.year?`(${p.year})`:'';
-            document.getElementById('prDis').innerText = v.disease;
-            document.getElementById('prSym').innerText = v.symptoms||'';
+        window.preparePrint = function(type) {
+            currentPrintType = type;
+            window.doPrint(type);
+        };
+        
+        window.doPrint = function(type) {
+            const pid = document.getElementById('vPid').value;
+            const p = window.db.find(x=>x.id==pid);
+            if (!p) return;
             
-            let html = '';
-            if(v.procs) html += `<tr><td colspan="2" style="font-weight:bold;font-style:italic">Thủ thuật: ${v.procs}</td></tr>`;
-            if(v.rxEast?.length) { html+=`<tr><td colspan="2" style="font-weight:bold;padding-top:4px">Đông Y:</td></tr>`; v.rxEast.forEach(m=>html+=`<tr><td>- ${m.name} (${m.qty}g)</td><td class="text-right">${(m.qty*m.price).toLocaleString()}</td></tr>`); }
-            if(v.rxWest?.length) { html+=`<tr><td colspan="2" style="font-weight:bold;padding-top:4px">Tây Y:</td></tr>`; v.rxWest.forEach(m=>html+=`<tr><td>- ${m.name} (${m.qty}v)</td><td class="text-right">${(m.qty*m.price).toLocaleString()}</td></tr>`); }
-            html+=`<tr><td style="font-weight:bold;border-top:1px dashed #000">Tổng thuốc:</td><td class="text-right border-top border-dashed border-black">${(v.medPrice||0).toLocaleString()}</td></tr>`;
-            html+=`<tr><td style="font-weight:bold">Thủ thuật:</td><td class="text-right">${(v.procTotal||0).toLocaleString()}</td></tr>`;
+            // Hide all print sections first
+            document.querySelectorAll('.print-section').forEach(el => {
+                el.classList.add('hidden');
+            });
             
-            document.getElementById('prTable').innerHTML = html;
-            let rawT = v.total; if(v.disc>0) rawT = Math.round(v.total/(1-v.disc/100));
-            document.getElementById('prTotal').innerText = rawT.toLocaleString();
-            document.getElementById('prDiscText').innerText = v.disc?`Giảm giá: ${v.disc}%`:'';
-            document.getElementById('prFinal').innerText = v.total.toLocaleString() + 'đ';
+            // Calculate totals
+            let eastTotal = 0;
+            let westTotal = 0;
+            let procTotal = 0;
             
-            // Show QR in Print
-            const prQrDiv = document.getElementById('prQrContainer');
-            if(window.config.qrCodeImage) {
-                prQrDiv.classList.remove('hidden');
-                document.getElementById('prQr').src = window.config.qrCodeImage;
-            } else {
-                prQrDiv.classList.add('hidden');
+            currentVisit.rxEast.forEach(m => {
+                eastTotal += (m.qty||0) * (m.price||0) * (m.days||1);
+            });
+            
+            currentVisit.rxWest.forEach(m => {
+                westTotal += (m.qty||0) * (m.price||0) * (m.days||1);
+            });
+            
+            currentVisit.procs.forEach(proc => {
+                const procTemplate = window.config.procs.find(p => p.name === proc.name);
+                const price = procTemplate ? procTemplate.price : proc.price;
+                procTotal += Math.round(price * (proc.days||1) * (1 - (proc.discount||0)/100));
+            });
+            
+            const total = eastTotal + westTotal + procTotal;
+            const discP = parseInt(document.getElementById('vDiscountPercent').value)||0;
+            const finalTotal = Math.round(total*(1-discP/100));
+            
+            // Common data
+            const clinicTitle = window.config.clinicTitle || 'PHÒNG KHÁM YHCT';
+            const doctorName = window.config.doctorName ? 'BS. ' + window.config.doctorName : 'BS. Đông Y';
+            const visitDate = document.getElementById('vDate').value.split('-').reverse().join('/');
+            const disease = document.getElementById('vDiseaseSelect').value||document.getElementById('vDiseaseInput').value;
+            
+            if (type === 'east' || type === 'both') {
+                // Eastern Medicine Prescription
+                document.getElementById('printEast').classList.remove('hidden');
+                document.getElementById('prTitleEast').innerText = clinicTitle;
+                document.getElementById('prDocEast').innerText = doctorName;
+                document.getElementById('prDateEast').innerText = 'Ngày: ' + visitDate;
+                document.getElementById('prNameEast').innerText = p.name;
+                document.getElementById('prYearEast').innerText = p.year ? `(${p.year})` : '';
+                document.getElementById('prDisEast').innerText = disease;
+                document.getElementById('prSymEast').innerText = document.getElementById('vSpecial').value || '';
+                document.getElementById('prTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
+                
+                // Calculate max days for eastern medicine
+                const maxDaysEast = currentVisit.rxEast.reduce((max, m) => Math.max(max, m.days||1), 1);
+                document.getElementById('prDaysEast').innerText = maxDaysEast;
+                
+                // Common usage for eastern medicine
+                const commonUsageEast = currentVisit.rxEast.map(m => m.usage || '').filter(u => u).join(', ');
+                document.getElementById('prUsageEast').innerText = commonUsageEast || 'Sáng, Chiều';
+                
+                // Eastern medicine table
+                let eastHtml = '';
+                currentVisit.rxEast.forEach(m => {
+                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
+                    eastHtml += `<tr>
+                        <td class="p-1">${m.name}</td>
+                        <td class="p-1 text-right">${m.qty || 0}g</td>
+                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
+                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
+                    </tr>`;
+                });
+                document.getElementById('prTableEast').innerHTML = eastHtml;
             }
             
-            setTimeout(() => window.print(), 300);
+            if (type === 'west' || type === 'both') {
+                // Western Medicine Prescription
+                document.getElementById('printWest').classList.remove('hidden');
+                document.getElementById('prTitleWest').innerText = clinicTitle;
+                document.getElementById('prDocWest').innerText = doctorName;
+                document.getElementById('prDateWest').innerText = 'Ngày: ' + visitDate;
+                document.getElementById('prNameWest').innerText = p.name;
+                document.getElementById('prYearWest').innerText = p.year ? `(${p.year})` : '';
+                document.getElementById('prDisWest').innerText = disease;
+                document.getElementById('prTotalWest').innerText = westTotal.toLocaleString() + 'đ';
+                
+                // Calculate max days for western medicine
+                const maxDaysWest = currentVisit.rxWest.reduce((max, m) => Math.max(max, m.days||1), 1);
+                document.getElementById('prDaysWest').innerText = maxDaysWest;
+                
+                // Common usage for western medicine
+                const commonUsageWest = currentVisit.rxWest.map(m => m.usage || '').filter(u => u).join(', ');
+                document.getElementById('prUsageWest').innerText = commonUsageWest || 'Sáng, Chiều';
+                
+                // Western medicine table
+                let westHtml = '';
+                currentVisit.rxWest.forEach(m => {
+                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
+                    westHtml += `<tr>
+                        <td class="p-1">${m.name}</td>
+                        <td class="p-1 text-right">${m.qty || 0} viên</td>
+                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
+                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
+                    </tr>`;
+                });
+                document.getElementById('prTableWest').innerHTML = westHtml;
+            }
+            
+            if (type === 'both') {
+                // Combined Prescription
+                document.getElementById('printBoth').classList.remove('hidden');
+                document.getElementById('printEast').classList.add('hidden');
+                document.getElementById('printWest').classList.add('hidden');
+                
+                document.getElementById('prTitleBoth').innerText = clinicTitle;
+                document.getElementById('prDocBoth').innerText = doctorName;
+                document.getElementById('prDateBoth').innerText = 'Ngày: ' + visitDate;
+                document.getElementById('prNameBoth').innerText = p.name;
+                document.getElementById('prYearBoth').innerText = p.year ? `(${p.year})` : '';
+                document.getElementById('prDisBoth').innerText = disease;
+                document.getElementById('prSymBoth').innerText = document.getElementById('vSpecial').value || '';
+                
+                // Eastern medicine table for combined
+                let eastBothHtml = '';
+                currentVisit.rxEast.forEach(m => {
+                    eastBothHtml += `<tr>
+                        <td class="p-1">${m.name}</td>
+                        <td class="p-1 text-right">${m.qty || 0}g</td>
+                        <td class="p-1 text-right">${m.days || 1}</td>
+                        <td class="p-1 text-right">${m.usage || 'Sáng, Chiều'}</td>
+                    </tr>`;
+                });
+                document.getElementById('prTableBothEast').innerHTML = eastBothHtml;
+                
+                // Western medicine table for combined
+                let westBothHtml = '';
+                currentVisit.rxWest.forEach(m => {
+                    westBothHtml += `<tr>
+                        <td class="p-1">${m.name}</td>
+                        <td class="p-1 text-right">${m.qty || 0} viên</td>
+                        <td class="p-1 text-right">${m.days || 1}</td>
+                        <td class="p-1 text-right">${m.usage || 'Sáng, Chiều'}</td>
+                    </tr>`;
+                });
+                document.getElementById('prTableBothWest').innerHTML = westBothHtml;
+            }
+            
+            if (type === 'invoice') {
+                // Invoice
+                document.getElementById('printInvoice').classList.remove('hidden');
+                document.getElementById('prTitleInvoice').innerText = clinicTitle;
+                document.getElementById('prDocInvoice').innerText = doctorName;
+                document.getElementById('prDateInvoice').innerText = 'Ngày xuất: ' + new Date().toLocaleDateString('vi-VN');
+                document.getElementById('prVisitDateInvoice').innerText = visitDate;
+                document.getElementById('prNameInvoice').innerText = p.name;
+                document.getElementById('prYearInvoice').innerText = p.year ? `(${p.year})` : '';
+                document.getElementById('prDisInvoice').innerText = disease;
+                
+                // Invoice table
+                let invoiceHtml = '';
+                
+                // Procedures
+                currentVisit.procs.forEach(proc => {
+                    const procTemplate = window.config.procs.find(p => p.name === proc.name);
+                    const price = procTemplate ? procTemplate.price : proc.price;
+                    const totalPrice = Math.round(price * (proc.days||1) * (1 - (proc.discount||0)/100));
+                    
+                    invoiceHtml += `<tr>
+                        <td class="p-1">${proc.name} (${proc.days||1} ngày)</td>
+                        <td class="p-1 text-right">${proc.days||1}</td>
+                        <td class="p-1 text-right">${price.toLocaleString()}đ</td>
+                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
+                    </tr>`;
+                });
+                
+                // Eastern medicines
+                currentVisit.rxEast.forEach(m => {
+                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
+                    invoiceHtml += `<tr>
+                        <td class="p-1">${m.name} (${m.days||1} ngày)</td>
+                        <td class="p-1 text-right">${m.qty || 0}g × ${m.days||1}</td>
+                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
+                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
+                    </tr>`;
+                });
+                
+                // Western medicines
+                currentVisit.rxWest.forEach(m => {
+                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
+                    invoiceHtml += `<tr>
+                        <td class="p-1">${m.name} (${m.days||1} ngày)</td>
+                        <td class="p-1 text-right">${m.qty || 0}v × ${m.days||1}</td>
+                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
+                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
+                    </tr>`;
+                });
+                
+                document.getElementById('prTableInvoice').innerHTML = invoiceHtml;
+                
+                // Totals
+                document.getElementById('prProcTotalInvoice').innerText = procTotal.toLocaleString() + 'đ';
+                document.getElementById('prEastTotalInvoice').innerText = eastTotal.toLocaleString() + 'đ';
+                document.getElementById('prWestTotalInvoice').innerText = westTotal.toLocaleString() + 'đ';
+                document.getElementById('prGrandTotalInvoice').innerText = total.toLocaleString() + 'đ';
+                document.getElementById('prDiscInvoice').innerText = discP + '%';
+                document.getElementById('prFinalInvoice').innerText = finalTotal.toLocaleString() + 'đ';
+                
+                // QR Code
+                const qrImg = document.getElementById('prQrInvoice');
+                if (window.config.qrCodeImage) {
+                    qrImg.src = window.config.qrCodeImage;
+                    document.getElementById('prQrContainerInvoice').classList.remove('hidden');
+                } else {
+                    document.getElementById('prQrContainerInvoice').classList.add('hidden');
+                }
+            }
+            
+            // Print after a short delay
+            setTimeout(() => {
+                window.print();
+                // Close print modal if open
+                document.getElementById('printModal').classList.remove('active');
+            }, 300);
+        };
+        
+        window.closeModals = function() { 
+            document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active')); 
         };
 
-        // --- SETTINGS UTILS ---
-        window.closeModals = function() { document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active')); };
+        // --- SETTINGS ---
         window.switchSettingsTab = function(id, btn) {
-            document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden')); document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+            document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden')); 
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); 
+            btn.classList.add('active');
         };
+        
         window.openSettings = function() {
             document.getElementById('sModal').classList.add('active');
             document.getElementById('confTitle').value = window.config.clinicTitle;
             document.getElementById('confDoctor').value = window.config.doctorName;
             document.getElementById('confPass').value = window.config.password;
+            
             // Set slider value
             document.getElementById('headerOverlayInput').value = window.config.headerOverlayOpacity || 0;
             document.getElementById('overlayValueDisplay').innerText = (window.config.headerOverlayOpacity || 0) + '%';
@@ -929,84 +2198,172 @@
             
             window.renderDiseaseSettings(); window.renderProcSettings(); window.renderTuChanConfig();
         };
+        
         window.saveSettings = function() {
             window.config.clinicTitle = document.getElementById('confTitle').value;
             window.config.doctorName = document.getElementById('confDoctor').value;
             window.config.password = document.getElementById('confPass').value;
-            // Header config saved via onchange already, but ensure update
-            window.saveConfig(); window.closeModals();
+            window.saveConfig(); 
+            window.closeModals();
         };
         
-        // --- KEYPAD & PROFIT ---
-        window.openKeypad = function(m) { keypadMode=m; tempPassInput=""; document.getElementById('keypadModal').classList.add('active'); window.updateDots(); };
-        window.closeKeypad = function() { document.getElementById('keypadModal').classList.remove('active'); };
-        window.addDigit = function(d) { if(tempPassInput.length<6) { tempPassInput+=d; window.updateDots(); if(tempPassInput.length===6) setTimeout(window.checkKeypadPass,100); } };
-        window.removeDigit = function() { if(tempPassInput.length>0) { tempPassInput=tempPassInput.slice(0,-1); window.updateDots(); } };
-        window.updateDots = function() { document.querySelectorAll('.dot').forEach((d,i)=>d.style.background=i<tempPassInput.length?'#5d4037':'transparent'); };
-        window.checkKeypadPass = function() {
-            if(keypadMode==='settings') { window.config.password=tempPassInput; document.getElementById('confPass').value=tempPassInput; window.saveConfig(); window.closeKeypad(); alert("Đã đổi pass"); }
-            else { if(tempPassInput===window.config.password) { window.config.profitVisible=true; window.saveConfig(); window.closeKeypad(); window.updateProfitDisplay(); } else { alert("Sai mật khẩu"); tempPassInput=""; window.updateDots(); } }
+        // --- PROFIT DISPLAY ---
+        window.handleProfitBoxClick = function() { 
+            if(!window.config.password) { 
+                window.config.profitVisible=!window.config.profitVisible; 
+                window.saveConfig(); 
+                window.updateProfitDisplay(); 
+            } else { 
+                if(window.config.profitVisible) { 
+                    window.config.profitVisible=false; 
+                    window.saveConfig(); 
+                    window.updateProfitDisplay(); 
+                } else window.openKeypad('unlock'); 
+            } 
         };
-        window.handleProfitBoxClick = function() { if(!window.config.password) { window.config.profitVisible=!window.config.profitVisible; window.saveConfig(); window.updateProfitDisplay(); } else { if(window.config.profitVisible) { window.config.profitVisible=false; window.saveConfig(); window.updateProfitDisplay(); } else window.openKeypad('unlock'); } };
+        
         window.updateProfitDisplay = function() {
             const l = document.getElementById('profitLabel');
             if(window.config.profitVisible||!window.config.password) {
                 let t=0, cm=`${new Date().getMonth()+1}/${new Date().getFullYear()}`;
-                window.db.forEach(p=>p.visits?.forEach(v=>{ if(new Date(v.date).getMonth()+1===new Date().getMonth()+1 && v.paid) t+=(v.total-(v.cost||0)); }));
+                window.db.forEach(p=>p.visits?.forEach(v=>{ 
+                    if(new Date(v.date).getMonth()+1===new Date().getMonth()+1 && v.paid) 
+                        t+=(v.total-(v.cost||0)); 
+                }));
                 l.innerText = t.toLocaleString()+'đ';
             } else l.innerText='******';
         };
 
         // --- HISTORY & STATS ---
         window.viewHistory = function(pid) {
-            const p = window.db.find(x=>x.id==pid); document.getElementById('hName').innerText=p.name;
-            document.getElementById('hContent').innerHTML = p.visits?.map(v=>`<div class="p-4 rounded-xl border border-[#eee] bg-white mb-2 shadow-sm"><div class="flex justify-between text-xs font-bold text-[#8d6e63] mb-1"><span>📅 ${v.date}</span><span>${parseInt(v.total).toLocaleString()}đ</span></div><div class="font-bold text-[#5d4037] mb-1 serif">${v.disease}</div><div class="flex gap-2 justify-end mt-2"><button onclick="window.closeModals();window.startVisit('${pid}',${v.id})" class="px-3 py-1 bg-[#efebe9] text-[#5d4037] text-xs rounded font-bold border">Sửa</button><button onclick="window.deleteVisit('${pid}',${v.id})" class="px-3 py-1 bg-white text-red-600 text-xs rounded font-bold border border-red-100">Xóa</button></div></div>`).join('')||'<p class="text-center text-gray-400">Trống</p>';
+            const p = window.db.find(x=>x.id==pid); 
+            document.getElementById('hName').innerText=p.name;
+            document.getElementById('hContent').innerHTML = p.visits?.map(v=>`
+                <div class="p-4 rounded-xl border border-[#eee] bg-white mb-2 shadow-sm">
+                    <div class="flex justify-between text-xs font-bold text-[#8d6e63] mb-1">
+                        <span>📅 ${v.date}</span>
+                        <span>${parseInt(v.total).toLocaleString()}đ</span>
+                    </div>
+                    <div class="font-bold text-[#5d4037] mb-1 serif">${v.disease}</div>
+                    <div class="text-xs text-gray-600 mb-2">
+                        ${v.rxEast?.length ? `Đông Y: ${v.rxEast.length} vị` : ''}
+                        ${v.rxWest?.length ? ` • Tây Y: ${v.rxWest.length} loại` : ''}
+                        ${v.procs?.length ? ` • Thủ thuật: ${v.procs.length}` : ''}
+                    </div>
+                    <div class="flex gap-2 justify-end mt-2">
+                        <button onclick="window.closeModals();window.startVisit('${pid}',${v.id})" 
+                                class="px-3 py-1 bg-[#efebe9] text-[#5d4037] text-xs rounded font-bold border">Sửa</button>
+                        <button onclick="window.deleteVisit('${pid}',${v.id})" 
+                                class="px-3 py-1 bg-white text-red-600 text-xs rounded font-bold border border-red-100">Xóa</button>
+                    </div>
+                </div>`).join('')||'<p class="text-center text-gray-400">Chưa có lịch sử khám bệnh</p>';
             document.getElementById('hModal').classList.add('active');
         };
-        window.deleteVisit = function(pid,vid) { if(confirm("Xóa?")) { const p=window.db.find(x=>x.id==pid); p.visits=p.visits.filter(v=>v.id!=vid); window.saveDb(); window.viewHistory(pid); window.render(); } };
-        window.openStats = function() { document.getElementById('analyticsModal').classList.add('active'); setTimeout(()=>{window.renderAnalytics();window.updateChart()},300); };
+        
+        window.deleteVisit = function(pid,vid) { 
+            if(confirm("Xóa lịch sử khám này?")) { 
+                const p=window.db.find(x=>x.id==pid); 
+                p.visits=p.visits.filter(v=>v.id!=vid); 
+                window.saveDb(); 
+                window.viewHistory(pid); 
+                window.render(); 
+            } 
+        };
+        
+        window.openStats = function() { 
+            document.getElementById('analyticsModal').classList.add('active'); 
+            setTimeout(()=>{
+                window.renderAnalytics();
+                window.updateChart()
+            },300); 
+        };
+        
         window.updateChart = function() {
-            const ctx = document.getElementById('analyticsChart').getContext('2d'); let lbl=[],data=[];
+            const ctx = document.getElementById('analyticsChart').getContext('2d'); 
+            let lbl=[],data=[];
             for(let i=5;i>=0;i--) {
-                const d=new Date(); d.setMonth(d.getMonth()-i); lbl.push(`Tháng ${d.getMonth()+1}`);
-                let m=0; window.db.forEach(p=>p.visits?.forEach(v=>{ if(new Date(v.date).getMonth()===d.getMonth()&&v.paid) m+=(v.total-(v.cost||0)); })); data.push(m);
+                const d=new Date(); d.setMonth(d.getMonth()-i); 
+                lbl.push(`Tháng ${d.getMonth()+1}`);
+                let m=0; 
+                window.db.forEach(p=>p.visits?.forEach(v=>{ 
+                    if(new Date(v.date).getMonth()===d.getMonth()&&v.paid) 
+                        m+=(v.total-(v.cost||0)); 
+                })); 
+                data.push(m);
             }
             if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, { type:'line', data:{labels:lbl,datasets:[{label:'Lợi nhuận',data:data,borderColor:'#5d4037',backgroundColor:'rgba(93, 64, 55, 0.1)',fill:true,tension:0.3}]}, options:{responsive:true,maintainAspectRatio:false} });
+            chartInstance = new Chart(ctx, { 
+                type:'line', 
+                data:{
+                    labels:lbl,
+                    datasets:[{
+                        label:'Lợi nhuận',
+                        data:data,
+                        borderColor:'#5d4037',
+                        backgroundColor:'rgba(93, 64, 55, 0.1)',
+                        fill:true,
+                        tension:0.3
+                    }]
+                }, 
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false
+                } 
+            });
         };
+        
         window.renderAnalytics = function() {
             const f = document.getElementById('anaTimeFilter').value, n = new Date();
             let all=[]; window.db.forEach(p=>p.visits?.forEach(v=>all.push({...v,pName:p.name})));
-            currentFilteredVisits = all.filter(v=>{ const d=new Date(v.date); if(f==='today') return d.toDateString()===n.toDateString(); if(f==='month') return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); return true; });
+            currentFilteredVisits = all.filter(v=>{ 
+                const d=new Date(v.date); 
+                if(f==='today') return d.toDateString()===n.toDateString(); 
+                if(f==='month') return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); 
+                return true; 
+            });
             currentFilteredVisits.sort((a,b)=>new Date(b.date)-new Date(a.date));
-            document.getElementById('anaTableBody').innerHTML = currentFilteredVisits.map(v=>`<tr><td class="p-2 border-b">${v.date}</td><td class="p-2 border-b font-bold">${v.pName}</td><td class="p-2 border-b text-xs">${v.disease}</td><td class="p-2 border-b text-right">${v.total.toLocaleString()}</td><td class="p-2 border-b text-right text-xs text-gray-500">${(v.total-(v.cost||0)).toLocaleString()}</td></tr>`).join('');
+            document.getElementById('anaTableBody').innerHTML = currentFilteredVisits.map(v=>`
+                <tr>
+                    <td class="p-2 border-b">${v.date}</td>
+                    <td class="p-2 border-b font-bold">${v.pName}</td>
+                    <td class="p-2 border-b text-xs">${v.disease}</td>
+                    <td class="p-2 border-b text-right">${v.total.toLocaleString()}</td>
+                    <td class="p-2 border-b text-right text-xs text-gray-500">${(v.total-(v.cost||0)).toLocaleString()}</td>
+                </tr>`).join('');
+        };
+
+        // --- OTHER SETTINGS FUNCTIONS ---
+        window.renderProcSettings = function() { 
+            document.getElementById('procList').innerHTML = window.config.procs.map((p,i)=>`
+                <div class="flex justify-between items-center p-3 border rounded bg-white mb-1">
+                    <div class="text-sm font-bold text-[#5d4037]">${p.name} 
+                        <span class="font-normal text-gray-400">(${p.price.toLocaleString()}đ/lần)</span>
+                    </div>
+                    <button onclick="window.deleteProc(${i})" class="text-xs px-2 py-1 bg-red-50 rounded text-red-600 hover:bg-red-100">Xóa</button>
+                </div>`).join(''); 
         };
         
-        // --- OTHER UTILS (Disease, Formula, Procs...) ---
-        window.renderDiseaseSettings = function() { document.getElementById('diseaseList').innerHTML = window.config.diseases.map((d,i)=>`<div class="flex justify-between items-center p-3 border border-[#eee] rounded-lg bg-white shadow-sm"><div class="font-bold text-sm text-[#3e2723]">${d.name}</div><div class="flex gap-2"><button onclick="window.editDisease(${i})" class="text-xs px-3 py-1 bg-[#efebe9] rounded font-bold text-[#5d4037]">SỬA</button><button onclick="window.deleteDisease(${i})" class="text-xs px-3 py-1 bg-red-50 rounded text-red-600">XÓA</button></div></div>`).join(''); };
-        window.editDisease = function(i) { tempDiseaseId=i; const d=window.config.diseases[i]; document.getElementById('dEditName').value=d.name; document.getElementById('dEditSym').value=d.sym||''; window.renderSampleRxSettings('west',d.rxWest||[]); window.renderFormulaList(); document.getElementById('dDetailModal').classList.add('active'); };
-        window.renderFormulaList = function() { const d=window.config.diseases[tempDiseaseId]; document.getElementById('dFormulaList').innerHTML = (!d.eastOptions||!d.eastOptions.length)?'<p class="text-xs text-gray-400 italic">Trống</p>':d.eastOptions.map((f,i)=>`<div class="flex justify-between items-center bg-white border border-[#eee] p-2 rounded"><span class="text-sm font-bold text-[#3e2723]">${f.name} <span class="text-xs font-normal text-gray-500">(${f.ingredients.length} vị)</span></span><div class="flex gap-1"><button onclick="window.editFormula(${i})" class="text-[10px] bg-[#e0e0e0] px-2 py-1 rounded">Sửa</button><button onclick="window.deleteFormula(${i})" class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded">Xóa</button></div></div>`).join(''); };
-        window.addNewFormulaToDisease = function() { const d=window.config.diseases[tempDiseaseId]; if(!d.eastOptions) d.eastOptions=[]; d.eastOptions.push({name:"Bài thuốc mới",ingredients:[]}); window.renderFormulaList(); window.editFormula(d.eastOptions.length-1); };
-        window.deleteFormula = function(i) { if(confirm("Xóa?")) { window.config.diseases[tempDiseaseId].eastOptions.splice(i,1); window.renderFormulaList(); } };
-        window.editFormula = function(i) { tempFormulaIndex=i; const f=window.config.diseases[tempDiseaseId].eastOptions[i]; document.getElementById('feName').value=f.name; window.renderFormulaIngredients(f.ingredients); document.getElementById('formulaEditModal').classList.add('active'); };
-        window.renderFormulaIngredients = function(l) { document.getElementById('feIngredientList').innerHTML = l.map((ing,i)=>`<div class="flex gap-2 mb-2 items-center"><input type="text" value="${ing.name}" id="fe_name_${i}" class="flex-grow text-sm border rounded p-2 song-input"><input type="number" value="${ing.qty}" id="fe_qty_${i}" class="w-16 text-center text-sm border rounded p-2 song-input"><input type="number" value="${ing.price||0}" id="fe_price_${i}" class="w-20 text-right text-xs border rounded p-2 song-input"><button onclick="window.removeFeIngredient(${i})" class="text-red-500 font-bold px-2">×</button></div>`).join(''); };
-        window.addIngredientToFormula = function() { const l=window.getFeIngredientsFromUI(); l.push({name:"",qty:10,price:0}); window.renderFormulaIngredients(l); };
-        window.removeFeIngredient = function(i) { const l=window.getFeIngredientsFromUI(); l.splice(i,1); window.renderFormulaIngredients(l); };
-        window.getFeIngredientsFromUI = function() { const l=[]; for(let i=0;i<document.getElementById('feIngredientList').children.length;i++) l.push({name:document.getElementById(`fe_name_${i}`).value,qty:parseFloat(document.getElementById(`fe_qty_${i}`).value)||0,price:parseFloat(document.getElementById(`fe_price_${i}`).value)||0}); return l; };
-        window.saveFormula = function() { const f=window.config.diseases[tempDiseaseId].eastOptions[tempFormulaIndex]; f.name=document.getElementById('feName').value; f.ingredients=window.getFeIngredientsFromUI().filter(x=>x.name); document.getElementById('formulaEditModal').classList.remove('active'); window.renderFormulaList(); };
-        window.saveDiseaseDetail = function() { const d=window.config.diseases[tempDiseaseId]; d.name=document.getElementById('dEditName').value; d.sym=document.getElementById('dEditSym').value; d.rxWest=window.getRxFromUISettings('west').filter(x=>x.name); document.getElementById('dDetailModal').classList.remove('active'); window.renderDiseaseSettings(); window.saveConfig(); };
-        window.renderSampleRxSettings = function(type,l) { document.getElementById('dSampleListWest').innerHTML = l.map((m,i)=>`<div class="flex gap-2 mb-2 items-center"><input type="text" value="${m.name}" id="rx_${type}_name_${i}" class="flex-grow text-sm border rounded p-2 song-input"><input type="number" value="${m.qty}" id="rx_${type}_qty_${i}" class="w-16 text-center text-sm border rounded p-2 song-input"><span class="text-xs text-gray-500">v</span><input type="number" value="${m.price||0}" id="rx_${type}_price_${i}" class="w-20 text-right text-xs border rounded p-2 song-input"><button onclick="window.deleteSampleMedSettings('${type}',${i})" class="text-red-400 font-bold px-2">×</button></div>`).join(''); };
-        window.addMedToSample = function(t) { const l=window.getRxFromUISettings(t); l.push({name:"",qty:1,price:0}); window.renderSampleRxSettings(t,l); };
-        window.deleteSampleMedSettings = function(t,i) { const l=window.getRxFromUISettings(t); l.splice(i,1); window.renderSampleRxSettings(t,l); };
-        window.getRxFromUISettings = function(t) { const l=[]; for(let i=0;i<document.getElementById('dSampleListWest').children.length;i++) l.push({name:document.getElementById(`rx_${t}_name_${i}`).value,qty:parseFloat(document.getElementById(`rx_${t}_qty_${i}`).value)||0,price:parseFloat(document.getElementById(`rx_${t}_price_${i}`).value)||0}); return l; };
-        window.addNewDisease = function() { window.config.diseases.push({name:"Bệnh mới",sym:"",eastOptions:[],rxWest:[]}); window.renderDiseaseSettings(); window.editDisease(window.config.diseases.length-1); };
-        window.deleteDisease = function(i) { if(confirm('Xóa?')) { window.config.diseases.splice(i,1); window.renderDiseaseSettings(); window.saveConfig(); } };
-        window.renderProcSettings = function() { document.getElementById('procList').innerHTML = window.config.procs.map((p,i)=>`<div class="flex justify-between items-center p-3 border rounded bg-white mb-1"><div class="text-sm font-bold text-[#5d4037]">${p.name} <span class="font-normal text-gray-400">(${p.price.toLocaleString()}đ)</span></div><button onclick="window.deleteProc(${i})" class="text-xs px-2 py-1 bg-red-50 rounded text-red-600 hover:bg-red-100">Xóa</button></div>`).join(''); };
-        window.addProc = function() { const n=document.getElementById('newProcName').value, p=parseInt(document.getElementById('newProcPrice').value); if(n&&p) { window.config.procs.push({name:n,price:p}); document.getElementById('newProcName').value=''; document.getElementById('newProcPrice').value=''; window.renderProcSettings(); window.saveConfig(); } };
-        window.deleteProc = function(i) { if(confirm('Xóa?')) { window.config.procs.splice(i,1); window.renderProcSettings(); window.saveConfig(); } };
-        window.renderTuChanConfig = function() { ['vong','van','vanhoi','thiet','thietchan','machchan'].forEach(sec => document.getElementById(`config${sec.charAt(0).toUpperCase()+sec.slice(1)}Chips`).innerHTML = (window.config.tuChan[sec]||[]).map((t,i)=>`<div class="tuchan-chip flex items-center"><span>${t}</span><button onclick="window.removeTuChanChip('${sec}',${i})" class="ml-1 text-red-500 text-xs">×</button></div>`).join('')); };
-        window.addTuChanChip = function(sec) { const i=document.getElementById(`new${sec.charAt(0).toUpperCase()+sec.slice(1)}Chip`), v=i.value.trim(); if(v&&!window.config.tuChan[sec].includes(v)) { window.config.tuChan[sec].push(v); window.renderTuChanConfig(); i.value=''; window.saveConfig(); } };
-        window.removeTuChanChip = function(sec,i) { if(confirm('Xóa?')) { window.config.tuChan[sec].splice(i,1); window.renderTuChanConfig(); window.saveConfig(); } };
+        window.addProc = function() { 
+            const n=document.getElementById('newProcName').value, p=parseInt(document.getElementById('newProcPrice').value); 
+            if(n&&p) { 
+                window.config.procs.push({name:n,price:p}); 
+                document.getElementById('newProcName').value=''; 
+                document.getElementById('newProcPrice').value=''; 
+                window.renderProcSettings(); 
+                window.saveConfig(); 
+            } 
+        };
+        
+        window.deleteProc = function(i) { 
+            if(confirm('Xóa dịch vụ này?')) { 
+                window.config.procs.splice(i,1); 
+                window.renderProcSettings(); 
+                window.saveConfig(); 
+            } 
+        };
+
+        // Initialize on load
+        window.onload();
     </script>
 </body>
 </html>
