@@ -69,6 +69,77 @@ window.isIPad = function() {
     return /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 };
 
+// --- HELPER: CONVERT STATIC INPUTS TO NATIVE ---
+window.setupNativeInputs = function() {
+    // Danh sách các ID của input tĩnh cần chuyển đổi sang nhập số trực tiếp
+    const configs = [
+        // Vitals
+        { id: 'vBpSys', handler: window.updateBpDisplay },
+        { id: 'vBpDia', handler: window.updateBpDisplay },
+        { id: 'vPulse', handler: () => { 
+            const val = document.getElementById('vPulse').value;
+            const disp = document.getElementById('displayPulse');
+            if(disp) disp.innerText = val;
+        }},
+        { id: 'vHeight', handler: window.updateHeightWeightDisplay },
+        { id: 'vWeight', handler: window.updateHeightWeightDisplay },
+        // Money & Days
+        { id: 'vEastDays', handler: window.calcTotal },
+        { id: 'vWestDays', handler: window.calcTotal },
+        { id: 'vEastManualPrice', handler: window.calcTotal },
+        { id: 'vWestManualPrice', handler: window.calcTotal },
+        { id: 'vCost', handler: window.calcTotal },
+        { id: 'vDiscountPercent', handler: () => {
+            const val = document.getElementById('vDiscountPercent').value;
+            const btn = document.getElementById('discountBtn');
+            if(btn) btn.innerText = val + "% ▼";
+            window.calcTotal();
+        }},
+        // NEW: Patient Info Inputs (Fix for issue)
+        { id: 'pYear', handler: null },
+        { id: 'pPhone', handler: null, type: 'tel' }
+    ];
+
+    configs.forEach(cfg => {
+        const el = document.getElementById(cfg.id);
+        if (el) {
+            // Apply Type Override if specified (e.g. 'tel'), otherwise default to 'number'
+            el.type = cfg.type || 'number'; 
+            
+            if(el.type === 'number') {
+                el.inputMode = 'decimal'; 
+                el.pattern = '[0-9]*';
+            } else if (el.type === 'tel') {
+                el.inputMode = 'numeric';
+                el.pattern = '[0-9]*';
+            }
+            
+            el.removeAttribute('readonly');
+            el.removeAttribute('onclick'); // Xóa sự kiện mở keypad cũ
+            el.onclick = null; // Đảm bảo xóa sạch
+            
+            // Thêm sự kiện lắng nghe mới
+            if(cfg.handler) el.oninput = cfg.handler;
+            el.onfocus = function() { this.select(); }; // Tự động bôi đen khi chọn
+            
+            // Style override (nếu cần)
+            el.style.pointerEvents = 'auto';
+            el.style.backgroundColor = '#fff';
+        }
+    });
+
+    // Xử lý riêng cho nút giảm giá nếu cần hiển thị input
+    const discInput = document.getElementById('vDiscountPercent');
+    const discBtn = document.getElementById('discountBtn');
+    if (discInput && discBtn && discInput.type === 'hidden') {
+        discInput.classList.remove('hidden');
+        discInput.style.width = '60px';
+        discInput.style.textAlign = 'center';
+        discInput.style.border = '1px dashed #ccc';
+        if(discBtn) discBtn.style.display = 'none'; 
+    }
+};
+
 // --- MAIN LOAD FUNCTION (ASYNC) ---
 window.onload = async function() {
     try {
@@ -116,7 +187,10 @@ window.onload = async function() {
         window.checkFirstTimeUse();
         window.injectCustomButtons();
         window.injectBackupButtons();
-        window.injectKeypadModal();
+        window.injectKeypadModal(); // Vẫn giữ Keypad cho mật khẩu bảo mật
+        
+        // 5. SETUP NATIVE INPUTS (NEW)
+        window.setupNativeInputs();
 
         // FIX: Ensure Header Card is clickable
         const headerCard = document.getElementById('mainHeaderCard');
@@ -381,7 +455,7 @@ window.updateProfitDisplay = function() {
     }
 };
 
-// --- KEYPAD FUNCTIONS ---
+// --- KEYPAD FUNCTIONS (ONLY FOR PASSWORD NOW) ---
 window.injectKeypadModal = function() {
     if (document.getElementById('keypadModal')) return;
     
@@ -482,100 +556,15 @@ window.processKeypadInput = async function() {
     }
 };
 
-// --- NUMBER PAD FUNCTIONS (UPDATED FOR MED INPUTS) ---
-window.openNumberPad = function(id, title, range, def) {
-    currentNumberInput = id; 
-    numberPadConfig.isPhone = false; 
-    const el = document.getElementById(id);
-    let val = def;
-    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) val = el.value || def;
-    numberPadValue = val.toString();
-    document.getElementById('numberPadTitle').innerText = title; 
-    document.getElementById('numberPadDisplay').innerText = numberPadValue;
-    document.getElementById('numberPadModal').classList.add('active');
-    if(range && range.includes('-')) {
-        const [min,max] = range.split('-'); 
-        numberPadConfig.min = parseInt(min); numberPadConfig.max = parseInt(max);
-    } else {
-        numberPadConfig.min = 0; numberPadConfig.max = 99999999;
-    }
-};
-
-window.openPhonePad = function() {
-    currentNumberInput = 'pPhone'; numberPadConfig.isPhone = true; numberPadValue = document.getElementById('pPhone').value;
-    document.getElementById('numberPadTitle').innerText = 'Số điện thoại';
-    document.getElementById('numberPadDisplay').innerText = numberPadValue || "";
-    document.getElementById('numberPadModal').classList.add('active');
-};
-
-window.addNumberPadDigit = function(d) {
-    if(numberPadConfig.isPhone) { if(numberPadValue.length<15) numberPadValue+=d; }
-    else { 
-        if(numberPadValue==="0") numberPadValue=d; 
-        else { 
-            const n = parseInt(numberPadValue+d); 
-            if(n<=numberPadConfig.max) numberPadValue+=d; 
-        } 
-    }
-    document.getElementById('numberPadDisplay').innerText = numberPadValue;
-};
-
-window.deleteNumberPadDigit = function() { numberPadValue = numberPadValue.slice(0,-1); document.getElementById('numberPadDisplay').innerText = numberPadValue||"0"; };
-window.clearNumberPad = function() { numberPadValue = ""; document.getElementById('numberPadDisplay').innerText = "0"; };
-window.closeNumberPad = function() { document.getElementById('numberPadModal').classList.remove('active'); };
-
-// --- MAIN NUMBER PAD CONFIRM LOGIC (CRITICAL FIX) ---
-window.confirmNumberPad = function() {
-    if(currentNumberInput) {
-        // Handle Medicine Inputs
-        if (currentNumberInput.startsWith('med_')) {
-            const parts = currentNumberInput.split('_'); // e.g., med_qty_east_0 or med_price_west_2
-            const field = parts[1]; // qty or price
-            const type = parts[2]; // east or west
-            const idx = parseInt(parts[3]);
-            
-            // Update Data directly
-            window.updateMed(type, idx, field, numberPadValue);
-            
-            // Re-render list is handled in updateMed, but we ensure input value is set
-            const el = document.getElementById(currentNumberInput);
-            if(el) el.value = numberPadValue;
-        }
-        // Handle Procedure Inputs
-        else if (currentNumberInput.startsWith('proc_days_')) {
-            const idx = parseInt(currentNumberInput.split('_')[2]);
-            window.updateProcDays(idx, numberPadValue);
-        }
-        else if (currentNumberInput.startsWith('proc_disc_')) {
-            const idx = parseInt(currentNumberInput.split('_')[2]);
-            if(currentVisit.procs[idx]) currentVisit.procs[idx].discount = parseInt(numberPadValue) || 0;
-            window.renderProcList(); window.calcTotal();
-        }
-        // Handle Settings Inputs (Setting East/West Template Items)
-        else if (currentNumberInput.startsWith('set_')) {
-             const parts = currentNumberInput.split('_'); // set_east_qty_0
-             const el = document.getElementById(currentNumberInput);
-             if (el) el.value = numberPadValue;
-        }
-        // Standard inputs
-        else {
-            const el = document.getElementById(currentNumberInput);
-            if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) el.value = numberPadValue;
-
-            if(currentNumberInput.startsWith('vBp')) window.updateBpDisplay();
-            else if(currentNumberInput==='vPulse') document.getElementById('displayPulse').innerText = numberPadValue;
-            else if(currentNumberInput==='vHeight'||currentNumberInput==='vWeight') window.updateHeightWeightDisplay();
-            else if(currentNumberInput==='vDiscountPercent') {
-                document.getElementById('discountBtn').innerText = numberPadValue + "% ▼"; window.calcTotal();
-            }
-            else if(currentNumberInput === 'vEastDays' || currentNumberInput === 'vWestDays' || 
-                    currentNumberInput === 'vEastManualPrice' || currentNumberInput === 'vWestManualPrice' || currentNumberInput === 'vCost') {
-                window.calcTotal();
-            }
-        }
-    }
-    window.closeNumberPad();
-};
+// --- NUMBER PAD FUNCTIONS (KEPT FOR COMPATIBILITY BUT UNUSED FOR INPUTS) ---
+// Note: These are no longer used for medicine inputs but kept to prevent errors if referenced
+window.openNumberPad = function(id, title, range, def) { console.log('Legacy keypad call ignored'); };
+window.openPhonePad = function() { console.log('Legacy keypad call ignored'); };
+window.addNumberPadDigit = function(d) {};
+window.deleteNumberPadDigit = function() {};
+window.clearNumberPad = function() {};
+window.closeNumberPad = function() {};
+window.confirmNumberPad = function() {};
 
 window.updateBpDisplay = function() { 
     document.getElementById('displayBP').innerText = (document.getElementById('vBpSys').value||120)+'/'+(document.getElementById('vBpDia').value||80); 
@@ -942,7 +931,6 @@ window.saveCurrentTabToTemp = function() {
 window.renderEastIngInSettings = function(ing = {}, idx = 0) {
     const container = document.getElementById('eastIngredientsContainer');
     const div = document.createElement('div');
-    const uniqueID = Date.now() + Math.random().toString(36).substr(2, 9);
     div.className = 'disease-ingredient-row med-row-grid';
     div.innerHTML = `
         <button onclick="this.parentElement.remove()" class="med-delete-btn">&times;</button>
@@ -950,12 +938,12 @@ window.renderEastIngInSettings = function(ing = {}, idx = 0) {
             <input type="text" class="east-ingredient-name song-input ipad-input-fix" placeholder="Tên vị thuốc..." value="${ing.name || ''}" onfocus="this.blur = null"> 
         </div>
         <div class="med-input-group"><label>S.Lượng</label>
-            <input type="text" id="set_east_qty_${uniqueID}" class="east-ingredient-qty med-input-large ipad-input-fix" value="${ing.qty || 10}" 
-            onclick="window.openNumberPad('set_east_qty_${uniqueID}', 'Số lượng', '0-999', ${ing.qty || 10})" readonly>
+            <input type="number" inputmode="decimal" class="east-ingredient-qty med-input-large ipad-input-fix" value="${ing.qty || 10}" 
+            onfocus="this.select()">
         </div>
         <div class="med-input-group"><label>Đơn Giá</label>
-            <input type="text" id="set_east_price_${uniqueID}" class="east-ingredient-price med-input-large ipad-input-fix" value="${ing.price || 0}" 
-            onclick="window.openNumberPad('set_east_price_${uniqueID}', 'Đơn giá', '0-999999', ${ing.price || 0})" readonly>
+            <input type="number" inputmode="decimal" class="east-ingredient-price med-input-large ipad-input-fix" value="${ing.price || 0}" 
+            onfocus="this.select()">
         </div>
         <input type="hidden" class="east-ingredient-days" value="1">
     `;
@@ -968,7 +956,6 @@ window.addEastIngredient = function() { window.renderEastIngInSettings({}, docum
 window.renderWestMedInSettings = function(med = {}, idx = 0) {
     const container = document.getElementById('westMedicinesContainer');
     const div = document.createElement('div');
-    const uniqueID = Date.now() + Math.random().toString(36).substr(2, 9);
     div.className = 'disease-ingredient-row med-row-grid';
     div.innerHTML = `
         <button onclick="this.parentElement.remove()" class="med-delete-btn">&times;</button>
@@ -976,12 +963,12 @@ window.renderWestMedInSettings = function(med = {}, idx = 0) {
             <input type="text" class="west-medicine-name song-input ipad-input-fix" placeholder="Tên thuốc mẫu..." value="${med.name || ''}" onfocus="this.blur = null">
         </div>
         <div class="med-input-group"><label>S.Lượng</label>
-            <input type="text" id="set_west_qty_${uniqueID}" class="west-medicine-qty med-input-large ipad-input-fix" value="${med.qty || 2}" 
-            onclick="window.openNumberPad('set_west_qty_${uniqueID}', 'Số lượng', '0-999', ${med.qty || 2})" readonly>
+            <input type="number" inputmode="decimal" class="west-medicine-qty med-input-large ipad-input-fix" value="${med.qty || 2}" 
+            onfocus="this.select()">
         </div>
         <div class="med-input-group"><label>Đơn Giá</label>
-            <input type="text" id="set_west_price_${uniqueID}" class="west-medicine-price med-input-large ipad-input-fix" value="${med.price || 0}" 
-            onclick="window.openNumberPad('set_west_price_${uniqueID}', 'Đơn giá', '0-999999', ${med.price || 0})" readonly>
+            <input type="number" inputmode="decimal" class="west-medicine-price med-input-large ipad-input-fix" value="${med.price || 0}" 
+            onfocus="this.select()">
         </div>
         <input type="hidden" class="west-medicine-days" value="1">
     `;
@@ -1066,8 +1053,8 @@ window.startVisit = function(pid, vid=null) {
     document.getElementById('vDate').value = window.getLocalDate();
     
     document.getElementById('vDiseaseInput').value = ''; document.getElementById('vSpecial').value = '';
-    document.getElementById('vCost').value = 0; document.getElementById('vDiscountPercent').value = 0;
-    document.getElementById('discountBtn').innerText = '0% ▼';
+    document.getElementById('vCost').value = 0; 
+    document.getElementById('vDiscountPercent').value = 0;
     
     document.getElementById('vEastDays').value = 1;
     document.getElementById('vWestDays').value = 1;
@@ -1086,7 +1073,7 @@ window.startVisit = function(pid, vid=null) {
             document.getElementById('vSpecial').value = v.symptoms; 
             document.getElementById('vCost').value = v.cost;
             document.getElementById('vDiscountPercent').value = v.disc||0; 
-            document.getElementById('discountBtn').innerText = (v.disc||0)+'% ▼';
+            // document.getElementById('discountBtn').innerText = (v.disc||0)+'% ▼'; // Deprecated
             if(v.tuChan) currentVisit.tuChan = v.tuChan;
             if(v.vong) document.getElementById('vVongExtra').value = v.vong;
             
@@ -1108,6 +1095,7 @@ window.startVisit = function(pid, vid=null) {
     window.renderProcOptions();
     window.renderProcList();
     window.calcTotal();
+    window.setupNativeInputs(); // Re-bind events to reset inputs
     window.goToStep(1); 
     document.getElementById('vModal').classList.add('active');
 };
@@ -1146,8 +1134,22 @@ window.renderProcList = function() {
         procDiv.innerHTML = `
             <button onclick="window.removeProcedure(${idx})" class="med-delete-btn">&times;</button>
             <div class="med-row-name"><div class="flex justify-between items-center"><span>${proc.name}</span><span class="text-xs font-normal text-gray-500">${proc.price.toLocaleString()}đ/lần</span></div></div>
-            <div class="med-input-group"><label>Số ngày</label><input type="text" min="1" value="${proc.days||1}" id="proc_days_${idx}" onclick="window.openNumberPad('proc_days_${idx}', 'Số ngày thủ thuật', '1-30', ${proc.days||1})" readonly class="med-input-large bg-white ipad-input-fix"></div>
-            <div class="med-input-group"><label>Giảm giá</label><button onclick="window.openNumberPad('proc_disc_${idx}', 'Giảm giá (%)', '0-100', ${proc.discount||0})" id="proc_disp_${idx}" class="med-input-large text-blue-600 bg-white border-dashed">${proc.discount||0}%</button></div>
+            
+            <div class="med-input-group"><label>Số ngày</label>
+                <input type="number" inputmode="decimal" min="1" value="${proc.days||1}" 
+                onchange="window.updateProcDays(${idx}, this.value)" 
+                oninput="window.updateProcDays(${idx}, this.value)"
+                onfocus="this.select()"
+                class="med-input-large bg-white ipad-input-fix">
+            </div>
+            
+            <div class="med-input-group"><label>Giảm giá (%)</label>
+                <input type="number" inputmode="decimal" min="0" max="100" value="${proc.discount||0}"
+                oninput="window.updateProcDiscount(${idx}, this.value)"
+                onfocus="this.select()"
+                class="med-input-large text-blue-600 bg-white border-dashed">
+            </div>
+            
             <div class="med-input-group"><label>Thành tiền</label><div class="med-input-large flex items-center justify-center bg-gray-100 text-base">${totalPrice.toLocaleString()}</div></div>
             <div class="med-usage-row">
                 <button class="time-btn-large ${(proc.note||'').includes('Sáng')?'active':''}" onclick="window.toggleProcNote(${idx}, 'Sáng')">Sáng</button>
@@ -1162,7 +1164,19 @@ window.renderProcList = function() {
 };
 
 window.removeProcedure = function(idx) { if (confirm("Xóa thủ thuật này?")) { currentVisit.procs.splice(idx, 1); window.renderProcList(); window.calcTotal(); } };
-window.updateProcDays = function(idx, days) { days = parseInt(days) || 1; if (days < 1) days = 1; currentVisit.procs[idx].days = days; window.renderProcList(); window.calcTotal(); };
+window.updateProcDays = function(idx, days) { 
+    days = parseInt(days) || 0; // Allow 0 while typing, minimum handled later
+    currentVisit.procs[idx].days = days; 
+    window.renderProcList(); 
+    window.calcTotal(); 
+};
+window.updateProcDiscount = function(idx, val) {
+    let disc = parseInt(val) || 0;
+    if(disc > 100) disc = 100;
+    currentVisit.procs[idx].discount = disc;
+    window.renderProcList();
+    window.calcTotal();
+};
 window.toggleProcNote = function(idx, time) {
     const proc = currentVisit.procs[idx];
     const currentNote = proc.note || '';
@@ -1214,7 +1228,7 @@ window.applyEasternSample = function(i) {
     }
 };
 
-// Updated: Render Med List with 2 columns (qty, price) + total, WITH ONCLICK FOR NUMBER PAD
+// Updated: Render Med List with NATIVE INPUTS
 window.renderMedList = function(type) {
     const list = document.getElementById(type==='east'?'vMedListEast':'vMedListWest');
     const data = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
@@ -1229,17 +1243,19 @@ window.renderMedList = function(type) {
             <button onclick="window.removeMed('${type}',${i})" class="med-delete-btn">&times;</button>
             <div class="med-row-name"><input type="text" value="${m.name}" onchange="window.updateMed('${type}',${i},'name',this.value)" class="song-input ipad-input-fix" placeholder="Nhập tên thuốc..." onfocus="this.blur=null"></div>
             
-            <!-- FIXED INPUTS: Added ID and ONCLICK to trigger Number Pad -->
+            <!-- FIXED INPUTS: Use Native Number Input -->
             <div class="med-input-group"><label>S.Lượng (${type==='east'?'g':'viên'})</label>
-                <input type="text" id="med_qty_${type}_${i}" value="${m.qty}" 
-                onclick="window.openNumberPad('med_qty_${type}_${i}', 'Số lượng', '0-999', ${m.qty})" 
-                readonly class="med-input-large ipad-input-fix">
+                <input type="number" inputmode="decimal" value="${m.qty}" 
+                oninput="window.updateMed('${type}',${i},'qty',this.value)" 
+                onfocus="this.select()"
+                class="med-input-large ipad-input-fix">
             </div>
             
             <div class="med-input-group"><label>Đơn giá</label>
-                <input type="text" id="med_price_${type}_${i}" value="${m.price||0}" 
-                onclick="window.openNumberPad('med_price_${type}_${i}', 'Đơn giá', '0-9999999', ${m.price||0})" 
-                readonly class="med-input-large ipad-input-fix text-right">
+                <input type="number" inputmode="decimal" value="${m.price||0}" 
+                oninput="window.updateMed('${type}',${i},'price',this.value)" 
+                onfocus="this.select()"
+                class="med-input-large ipad-input-fix text-right">
             </div>
             
             <div class="med-input-group"><label>Thành tiền</label><div class="med-input-large flex items-center justify-center bg-gray-100 text-sm font-bold text-gray-500">${((m.qty||0)*(m.price||0)*days).toLocaleString()}</div></div>
@@ -1262,10 +1278,23 @@ window.updateMed = function(type,i,f,v) {
     meds[i][f] = (f==='qty'||f==='price')?parseFloat(v):v; 
     window.calcTotal(); 
     // Optimization: If specific field update, maybe only refresh total, but safe to render all
-    if(f==='qty'||f==='price') window.renderMedList(type);
+    if(f==='qty'||f==='price') {
+       // Optional: Don't re-render list while typing to avoid focus loss, handled by oninput updating value in memory + calcTotal
+       // Only re-render if needed (e.g. adding rows)
+       // Here we rely on calcTotal to update the summary, list items keep their state via input.value
+       // But we need to update "Thành tiền" cell in the row
+       // Simple approach: re-render. To avoid focus loss, browser usually handles it well if ID not changed, but here we rebuild HTML.
+       // BETTER: Just update the specific total cell in DOM for better UX.
+       const row = document.querySelectorAll(type==='east'?'#vMedListEast .med-row-grid':'#vMedListWest .med-row-grid')[i];
+       if(row) {
+           const totalCell = row.querySelectorAll('.med-input-large')[2]; // 3rd one is total
+           const days = type==='east'?currentVisit.eastDays:currentVisit.westDays;
+           if(totalCell) totalCell.innerText = ((meds[i].qty||0)*(meds[i].price||0)*days).toLocaleString();
+       }
+    }
 };
 window.updateMedDays = function(type,i,days) {
-    // Legacy function, kept to prevent errors if called, but does nothing to UI now
+    // Legacy function, kept to prevent errors if called
     const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest; 
     days = parseInt(days) || 1; if (days < 1) days = 1; meds[i].days = days; window.calcTotal();
 };
@@ -1325,13 +1354,6 @@ window.calcTotal = function() {
     currentVisit.manualMedTotalEast = eastTotal;
     currentVisit.manualMedTotalWest = westTotal;
     
-    // Update displayed list to reflect new totals per item
-    // We only re-render if the focused element is NOT an input in the list to avoid losing focus
-    // if (!document.activeElement || !document.activeElement.classList.contains('med-input-large')) {
-         // Optimization: Don't full re-render constantly on typing, but do it when days change
-         // For now, we rely on the total display at bottom, individual row updates on next interaction
-    // }
-    
     document.getElementById('displayMedTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
     document.getElementById('displayMedTotalWest').innerText = westTotal.toLocaleString() + 'đ';
     document.getElementById('displayProcTotal').innerText = procTotal.toLocaleString() + 'đ';
@@ -1340,6 +1362,19 @@ window.calcTotal = function() {
     document.getElementById('displayGrandTotal').innerText = total.toLocaleString() + 'đ';
     const discP = parseInt(document.getElementById('vDiscountPercent').value)||0;
     document.getElementById('finalTotal').innerText = Math.round(total*(1-discP/100)).toLocaleString() + 'đ';
+
+    // Update Row Totals dynamically without full re-render
+    ['east', 'west'].forEach(type => {
+        const days = type==='east'?eastDays:westDays;
+        const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
+        const rows = document.querySelectorAll(type==='east'?'#vMedListEast .med-row-grid':'#vMedListWest .med-row-grid');
+        rows.forEach((row, i) => {
+             if(meds[i]) {
+                const totalCell = row.querySelectorAll('.med-input-large')[2]; 
+                if(totalCell) totalCell.innerText = ((meds[i].qty||0)*(meds[i].price||0)*days).toLocaleString();
+             }
+        });
+    });
 };
 
 // --- OTHER FUNCTIONS ---
@@ -1752,4 +1787,5 @@ window.renderProcSettings = function() { document.getElementById('procList').inn
 window.addProc = async function() { const n=document.getElementById('newProcName').value, p=parseInt(document.getElementById('newProcPrice').value); if(n&&p) { window.config.procs.push({name:n,price:p}); document.getElementById('newProcName').value=''; document.getElementById('newProcPrice').value=''; window.renderProcSettings(); await window.saveConfig(); } };
 window.deleteProc = async function(i) { if(confirm('Xóa dịch vụ này?')) { window.config.procs.splice(i,1); window.renderProcSettings(); await window.saveConfig(); } };
 window.onload();
+
 
