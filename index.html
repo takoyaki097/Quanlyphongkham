@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>YHCT Pro - Quản lý Phòng Khám</title>
     <!-- CSS Reset & Base -->
-    <link rel="stylesheet" href="style.css">
+    <!-- <link rel="stylesheet" href="style.css"> --> <!-- Comment lại nếu không có file style.css thực tế -->
     
     <!-- CÁC THƯ VIỆN CẦN THIẾT -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -219,6 +219,136 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* GLOBAL STYLES & MODAL */
+        body { font-family: 'Noto Sans', sans-serif; background-color: #fafafa; color: #3e2723; }
+        .serif { font-family: 'Noto Serif', serif; }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 50;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal.active { opacity: 1; pointer-events: auto; }
+        .modal-box {
+            background: white; width: 95%; max-width: 500px;
+            border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+            max-height: 90vh; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fffcf7; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; background: #fff; }
+
+        /* Button Styles */
+        .btn-glass {
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(4px);
+            border: 1px solid #d7ccc8; border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-glass:active { transform: scale(0.98); background: #f5f5f5; }
+        
+        .btn-primary {
+            background: #5d4037; color: white; border: none;
+            border-radius: 12px; font-weight: bold;
+            box-shadow: 0 2px 5px rgba(93,64,55,0.3); transition: all 0.2s;
+        }
+        .btn-primary:active { transform: scale(0.98); box-shadow: none; }
+
+        /* Input Fixes for iPad */
+        .ipad-input-fix { -webkit-appearance: none; border-radius: 8px; }
+        .song-input { width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; outline: none; }
+        .song-input:focus { border-color: #8d6e63; }
+        .song-label { font-size: 12px; font-weight: bold; color: #8d6e63; margin-bottom: 4px; display: block; text-transform: uppercase; }
+
+        /* Tabs */
+        .tabs { display: flex; background: #f5f5f5; p-1; border-bottom: 1px solid #ddd; }
+        .tab-btn { flex: 1; padding: 12px; font-size: 13px; font-weight: bold; color: #888; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: #5d4037; border-bottom-color: #5d4037; background: white; }
+
+        /* Number Pad Specifics */
+        .number-input-container { position: relative; }
+        .number-input-display { 
+            width: 100%; padding: 12px; text-align: center; font-size: 20px; 
+            font-weight: bold; border: 1px solid #d7ccc8; border-radius: 12px; 
+            background: #fff; color: #3e2723; cursor: pointer;
+        }
+        .number-pad-modal {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 100; /* High z-index */
+            display: flex; flex-direction: column; justify-content: flex-end;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .number-pad-modal.active { opacity: 1; pointer-events: auto; }
+        .number-pad-container {
+            background: #fff; border-top-left-radius: 20px; border-top-right-radius: 20px;
+            padding: 20px; padding-bottom: 40px; box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+        }
+        .number-pad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; mx-auto; }
+        .number-pad-btn {
+            padding: 15px; font-size: 22px; font-weight: bold; border-radius: 12px;
+            background: #f5f5f5; border: 1px solid #e0e0e0; color: #3e2723;
+        }
+        .number-pad-btn:active { background: #d7ccc8; }
+        .number-pad-btn.confirm { background: #5d4037; color: white; grid-column: span 2; }
+        .number-pad-btn.clear { color: #d32f2f; background: #ffebee; }
+        .number-pad-btn.delete { color: #d32f2f; background: #ffebee; }
+        .number-pad-display { 
+            text-align: center; font-size: 32px; font-weight: bold; 
+            margin-bottom: 20px; color: #3e2723; border-bottom: 2px solid #5d4037; padding-bottom: 5px;
+        }
+        .number-pad-footer { display: flex; gap: 10px; margin-top: 15px; max-width: 400px; mx-auto; }
+        .number-pad-close { flex: 1; padding: 15px; font-weight: bold; color: #757575; background: #eee; border-radius: 12px; }
+
+        /* Print CSS - CRITICAL FIX */
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; }
+            .print-section { display: block !important; }
+            .no-print { display: none !important; }
+            .hidden-print { display: none !important; }
+            /* Hide other print sections when one is active */
+            .print-section.hidden { display: none !important; }
+        }
+
+        /* Utility Helpers */
+        .hidden { display: none !important; }
+        
+        /* Patient Row */
+        .patient-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px; background: white; border-radius: 12px; 
+            border: 1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .p-actions { display: flex; gap: 5px; }
+        .act-btn { padding: 6px 12px; font-size: 10px; font-weight: bold; border-radius: 8px; }
+        .act-edit { background: #fff8e1; color: #f57f17; }
+        .act-exam { background: #e8f5e9; color: #2e7d32; }
+        .act-del { background: #ffebee; color: #c62828; }
+
+        .discount-btn {
+            font-size: 20px; font-weight: bold; color: #e65100;
+            background: #fff3e0; padding: 5px 15px; border-radius: 20px; border: 1px dashed #ffb74d;
+        }
+        
+        /* Tu Chan Chips */
+        .tuchan-section { margin-bottom: 10px; padding: 10px; border: 1px dashed #d7ccc8; border-radius: 8px; background: #fffcf7; }
+        .tuchan-title { font-weight: bold; color: #5d4037; font-size: 12px; margin-bottom: 5px; text-transform: uppercase; }
+        .tuchan-title span { display: inline-block; width: 18px; height: 18px; background: #8d6e63; color: white; border-radius: 50%; text-align: center; line-height: 18px; margin-right: 5px; font-size: 10px; }
+        .med-chip { display: inline-block; padding: 4px 10px; background: white; border: 1px solid #eee; border-radius: 15px; font-size: 11px; margin: 2px; cursor: pointer; color: #555; }
+        .med-chip.active { background: #5d4037; color: white; border-color: #5d4037; }
+        .tuchan-chip { display: inline-block; padding: 4px 10px; background: white; border: 1px solid #eee; border-radius: 15px; font-size: 11px; margin: 2px; cursor: pointer; color: #555; }
+        .tuchan-chip.active { background: #8d6e63; color: white; border-color: #8d6e63; }
+        
+        .print-option-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 15px; border: 1px solid #eee; border-radius: 12px; background: #fff;
+            transition: all 0.2s;
+        }
+        .print-option-btn:active { background: #f0f0f0; border-color: #ccc; }
     </style>
 </head>
 <body>
@@ -260,7 +390,6 @@
             <!-- KẾT CẤU MỚI: BỘ LỌC THÁNG (Horizontal Scroll) -->
             <div id="monthFilterArea" class="flex gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar pl-1">
                 <!-- Javascript sẽ điền các nút tháng vào đây -->
-                <!-- Ví dụ: <button class="month-chip active">T1/2026</button> -->
             </div>
             
             <!-- DANH SÁCH BỆNH NHÂN -->
@@ -534,10 +663,10 @@
     <!-- PATIENT MODAL -->
     <div id="pModal" class="modal"><div class="modal-box" style="height:auto; max-height:80vh;"><div class="modal-header"><h2 class="font-bold text-xl text-[#3e2723]">Hồ Sơ Bệnh Nhân</h2><button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button></div><div class="modal-body"><input type="hidden" id="pEditId"><div class="space-y-4"><div><label class="song-label">Họ Tên *</label><input type="text" id="pName" class="song-input ipad-input-fix" placeholder="Nhập họ tên"></div><div class="grid grid-cols-2 gap-4"><div><label class="song-label">Năm sinh</label><div class="number-input-container"><input type="text" id="pYear" class="number-input-display" placeholder="1990" readonly onclick="window.openNumberPad('pYear', 'Năm sinh', '1900-2024', 1990)" onfocus="this.blur()"></div></div><div><label class="song-label">Số điện thoại</label><div class="number-input-container"><input type="text" id="pPhone" class="number-input-display" placeholder="0123456789" readonly onclick="window.openPhonePad()" onfocus="this.blur()"></div></div></div><div><label class="song-label">Địa chỉ</label><input type="text" id="pAddress" class="song-input ipad-input-fix" placeholder="Địa chỉ"></div></div></div><div class="modal-footer"><button onclick="window.closeModals()" class="flex-1 py-3 btn-glass">Hủy</button><button onclick="window.savePatient()" class="flex-1 py-3 btn-primary">Lưu Hồ Sơ</button></div></div></div>
 
-    <!-- NUMBER PAD MODAL -->
+    <!-- NUMBER PAD MODAL (FIXED Z-INDEX) -->
     <div id="numberPadModal" class="number-pad-modal"><div class="number-pad-container"><div class="number-pad-header"><h3 id="numberPadTitle" class="font-bold text-lg text-[#3e2723]">Nhập số</h3><p id="numberPadRange" class="text-xs text-gray-500"></p></div><div class="number-pad-display" id="numberPadDisplay">0</div><div class="number-pad-grid"><button class="number-pad-btn" onclick="window.addNumberPadDigit('1')">1</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('2')">2</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('3')">3</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('4')">4</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('5')">5</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('6')">6</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('7')">7</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('8')">8</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('9')">9</button><button class="number-pad-btn clear" onclick="window.clearNumberPad()">C</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('0')">0</button><button class="number-pad-btn delete" onclick="window.deleteNumberPadDigit()">⌫</button></div><div class="number-pad-footer"><button class="number-pad-close" onclick="window.closeNumberPad()">Đóng</button><button class="number-pad-btn confirm" onclick="window.confirmNumberPad()">XONG</button></div></div></div>
 
-    <!-- DISEASE MODAL (LÀM LẠI CHO TO & ĐẸP) -->
+    <!-- DISEASE MODAL -->
     <div id="diseaseModal" class="modal">
         <div class="modal-box max-w-2xl max-h-[85vh] overflow-y-auto">
             <div class="modal-header">
@@ -633,7 +762,7 @@
                     </div>
                 </div>
 
-                <!-- CẬP NHẬT PHẦN CẤU HÌNH TỨ CHẨN MỚI -->
+                <!-- CẬP NHẬT PHẦN CẤU HÌNH TỨ CHẨN -->
                 <div id="tabMed" class="settings-panel space-y-6 hidden">
                     <div>
                         <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Danh mục Bệnh</h3>
@@ -650,7 +779,7 @@
                         </div>
                     </div>
                     
-                    <!-- KHU VỰC CẤU HÌNH TỨ CHẨN ĐÃ ĐƯỢC CẬP NHẬT ID ĐỂ KHỚP SCRIPT -->
+                    <!-- KHU VỰC CẤU HÌNH TỨ CHẨN -->
                     <div>
                         <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Cấu hình Tứ chẩn</h3>
                         <div id="tuChanConfigArea" class="space-y-4">
@@ -724,7 +853,7 @@
         </div>
     </div>
 
-    <!-- ANALYTICS MODAL (CẬP NHẬT: THÊM CỘT TUỔI, TT VÀ SORT) -->
+    <!-- ANALYTICS MODAL -->
     <div id="analyticsModal" class="modal">
         <div class="modal-box max-w-5xl">
             <div class="modal-header">
@@ -740,7 +869,7 @@
                         <option value="all">Tất cả</option>
                     </select>
                     
-                    <!-- NEW SORT FILTER -->
+                    <!-- SORT FILTER -->
                     <select id="anaSortBy" onchange="window.renderAnalytics()" class="song-input w-40">
                         <option value="date_desc">📅 Mới nhất</option>
                         <option value="name_asc">🔤 Tên A-Z</option>
@@ -763,9 +892,9 @@
                         <tr class="bg-gray-50 text-left text-xs uppercase text-gray-500">
                             <th class="p-2">Ngày</th>
                             <th class="p-2">Tên</th>
-                            <th class="p-2">Tuổi</th> <!-- NEW -->
+                            <th class="p-2">Tuổi</th> 
                             <th class="p-2">Bệnh</th>
-                            <th class="p-2 text-center">TT</th> <!-- NEW: Paid status -->
+                            <th class="p-2 text-center">TT</th> 
                             <th class="p-2 text-right">Thu</th>
                             <th class="p-2 text-right">Lãi</th>
                         </tr>
@@ -779,10 +908,143 @@
     <!-- OTHER MODALS (History) -->
     <div id="hModal" class="modal"><div class="modal-box max-w-2xl"><div class="modal-header"><h2 class="font-bold text-xl serif">Lịch sử: <span id="hName"></span></h2><button onclick="window.closeModals()" class="text-3xl">&times;</button></div><div id="hContent" class="modal-body space-y-3"></div></div></div>
 
+    <!-- KHU VỰC ẨN CHỨA CÁC MẪU IN (QUAN TRỌNG: ĐÃ THÊM MỚI) -->
+    <div id="printArea" class="hidden">
+        <!-- 1. MẪU ĐƠN ĐÔNG Y -->
+        <div id="printEast" class="print-section hidden bg-white p-8 max-w-[210mm] mx-auto font-serif text-[#000]">
+            <div class="text-center mb-6 border-b-2 border-gray-800 pb-4">
+                <h1 id="prTitleEast" class="font-bold text-2xl uppercase mb-1"></h1>
+                <p id="prDocEast" class="text-sm font-bold"></p>
+                <p id="prDateEast" class="text-xs italic mt-1"></p>
+            </div>
+            <div class="mb-4 text-sm leading-relaxed">
+                <p class="mb-1"><strong class="uppercase">Họ tên:</strong> <span id="prNameEast" class="text-lg font-bold"></span> <span id="prYearEast"></span></p>
+                <p class="mb-1"><strong>Chẩn đoán:</strong> <span id="prDisEast"></span></p>
+                <p class="mb-1"><strong>Triệu chứng:</strong> <span id="prSymEast"></span></p>
+            </div>
+            <table class="w-full text-sm border-collapse mb-4 mt-4">
+                <thead>
+                    <tr class="border-b-2 border-black">
+                        <th class="text-left py-2">Vị thuốc</th>
+                        <th class="text-right py-2">Số lượng</th>
+                        <th class="text-right py-2">Đơn giá</th>
+                        <th class="text-right py-2">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="prTableEast"></tbody>
+            </table>
+            <div class="mt-4 border-t border-black pt-2">
+                <div class="flex justify-between font-bold text-lg">
+                    <span>Tổng số thang: <span id="prDaysEast"></span></span>
+                    <span>Tổng tiền: <span id="prTotalEast"></span></span>
+                </div>
+                <p class="mt-2 italic"><strong>Cách dùng:</strong> <span id="prUsageEast"></span></p>
+            </div>
+        </div>
+
+        <!-- 2. MẪU ĐƠN TÂY Y -->
+        <div id="printWest" class="print-section hidden bg-white p-8 max-w-[210mm] mx-auto font-sans text-[#000]">
+            <div class="text-center mb-6 border-b-2 border-gray-800 pb-4">
+                <h1 id="prTitleWest" class="font-bold text-2xl uppercase mb-1"></h1>
+                <p id="prDocWest" class="text-sm font-bold"></p>
+                <p id="prDateWest" class="text-xs italic mt-1"></p>
+            </div>
+            <div class="mb-4 text-sm leading-relaxed">
+                <p class="mb-1"><strong class="uppercase">Họ tên:</strong> <span id="prNameWest" class="text-lg font-bold"></span> <span id="prYearWest"></span></p>
+                <p class="mb-1"><strong>Chẩn đoán:</strong> <span id="prDisWest"></span></p>
+            </div>
+            <table class="w-full text-sm border-collapse mb-4 mt-4">
+                <thead>
+                    <tr class="border-b-2 border-black">
+                        <th class="text-left py-2">Tên thuốc</th>
+                        <th class="text-right py-2">Số lượng</th>
+                        <th class="text-right py-2">Đơn giá</th>
+                        <th class="text-right py-2">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="prTableWest"></tbody>
+            </table>
+            <div class="mt-4 border-t border-black pt-2">
+                <div class="flex justify-between font-bold text-lg">
+                    <span>Số ngày thuốc: <span id="prDaysWest"></span></span>
+                    <span>Tổng tiền: <span id="prTotalWest"></span></span>
+                </div>
+                <p class="mt-2 italic"><strong>Lời dặn:</strong> <span id="prUsageWest"></span></p>
+            </div>
+        </div>
+
+        <!-- 3. MẪU ĐƠN CẢ HAI -->
+        <div id="printBoth" class="print-section hidden bg-white p-8 max-w-[210mm] mx-auto text-[#000]">
+            <div class="text-center mb-4 border-b-2 border-gray-800 pb-2">
+                <h1 id="prTitleBoth" class="font-bold text-xl uppercase"></h1>
+                <p id="prDocBoth" class="text-xs font-bold"></p>
+                <p id="prDateBoth" class="text-[10px] italic"></p>
+            </div>
+            <div class="mb-2 text-sm">
+                <p><strong>BN:</strong> <span id="prNameBoth" class="font-bold"></span> <span id="prYearBoth"></span> | <strong>Bệnh:</strong> <span id="prDisBoth"></span></p>
+                <p><strong>TC:</strong> <span id="prSymBoth"></span></p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-bold border-b border-black mb-2 uppercase text-sm">Đông Y</h3>
+                    <table class="w-full text-xs mb-2">
+                        <tbody id="prTableBothEast"></tbody>
+                    </table>
+                    <p class="text-xs"><strong>SL:</strong> <span id="prDaysBothEast"></span> thang | <strong>Dùng:</strong> <span id="prNoteBothEast"></span></p>
+                </div>
+                <div>
+                    <h3 class="font-bold border-b border-black mb-2 uppercase text-sm">Tây Y</h3>
+                    <table class="w-full text-xs mb-2">
+                        <tbody id="prTableBothWest"></tbody>
+                    </table>
+                    <p class="text-xs"><strong>SL:</strong> <span id="prDaysBothWest"></span> ngày | <strong>Dùng:</strong> <span id="prNoteBothWest"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. MẪU HÓA ĐƠN -->
+        <div id="printInvoice" class="print-section hidden bg-white p-8 max-w-[80mm] mx-auto text-[#000] font-mono text-xs">
+            <div class="text-center mb-4">
+                <h2 id="prTitleInvoice" class="font-bold text-base uppercase"></h2>
+                <p id="prDocInvoice"></p>
+                <p>----------------</p>
+                <h3 class="font-bold text-lg">HÓA ĐƠN THANH TOÁN</h3>
+                <p id="prDateInvoice"></p>
+            </div>
+            <div class="mb-2">
+                <p>KH: <span id="prNameInvoice" class="font-bold"></span> <span id="prYearInvoice"></span></p>
+                <p>Ngày khám: <span id="prVisitDateInvoice"></span></p>
+                <p>Bệnh: <span id="prDisInvoice"></span></p>
+            </div>
+            <p>--------------------------------</p>
+            <table class="w-full mb-2 text-left">
+                <thead><tr><th>DV/Thuốc</th><th class="text-right">SL</th><th class="text-right">ĐG</th><th class="text-right">TT</th></tr></thead>
+                <tbody id="prTableInvoice"></tbody>
+            </table>
+            <p>--------------------------------</p>
+            <div class="space-y-1 text-right">
+                <p>Thủ thuật: <span id="prProcTotalInvoice"></span></p>
+                <p>Đông Y: <span id="prEastTotalInvoice"></span></p>
+                <p>Tây Y: <span id="prWestTotalInvoice"></span></p>
+                <p class="font-bold text-sm mt-2 border-t border-dashed pt-1">TỔNG CỘNG: <span id="prGrandTotalInvoice"></span></p>
+                <p>Chiết khấu: <span id="prDiscInvoice"></span></p>
+                <p class="font-black text-xl mt-2">TT: <span id="prFinalInvoice"></span></p>
+            </div>
+            <div id="prQrContainerInvoice" class="mt-4 text-center hidden">
+                <p class="uppercase font-bold mb-1">Quét mã thanh toán</p>
+                <img id="prQrInvoice" src="" class="w-32 h-32 mx-auto object-contain">
+            </div>
+            <div class="text-center mt-6 italic">
+                <p>Cảm ơn quý khách!</p>
+                <p>Hẹn gặp lại.</p>
+            </div>
+        </div>
+    </div>
+
     <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="window.handleJSONFileSelect(event)">
 
     <script src="script.js"></script>
 </body>
 </html>
-
 

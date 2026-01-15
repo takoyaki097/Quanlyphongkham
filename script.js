@@ -54,7 +54,7 @@ let currentMonthFilter = 'CURRENT'; // 'ALL', 'CURRENT' (YYYY-MM), or specific '
 let keypadMode = "unlock";
 let tempPassInput = "";
 let numberPadValue = "", currentNumberInput = null;
-let numberPadConfig = { min: 0, max: 9999, defaultValue: 0, isPhone: false };
+let numberPadConfig = { min: 0, max: 99999999, defaultValue: 0, isPhone: false };
 
 // --- DATE HELPER FUNCTION (FIX TIMEZONE ISSUE) ---
 window.getLocalDate = function() {
@@ -482,9 +482,10 @@ window.processKeypadInput = async function() {
     }
 };
 
-// --- NUMBER PAD FUNCTIONS ---
-window.openNumberPad = function(id,title,range,def) {
-    currentNumberInput = id; numberPadConfig.isPhone = false; 
+// --- NUMBER PAD FUNCTIONS (UPDATED FOR MED INPUTS) ---
+window.openNumberPad = function(id, title, range, def) {
+    currentNumberInput = id; 
+    numberPadConfig.isPhone = false; 
     const el = document.getElementById(id);
     let val = def;
     if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) val = el.value || def;
@@ -495,6 +496,8 @@ window.openNumberPad = function(id,title,range,def) {
     if(range && range.includes('-')) {
         const [min,max] = range.split('-'); 
         numberPadConfig.min = parseInt(min); numberPadConfig.max = parseInt(max);
+    } else {
+        numberPadConfig.min = 0; numberPadConfig.max = 99999999;
     }
 };
 
@@ -507,7 +510,13 @@ window.openPhonePad = function() {
 
 window.addNumberPadDigit = function(d) {
     if(numberPadConfig.isPhone) { if(numberPadValue.length<15) numberPadValue+=d; }
-    else { if(numberPadValue==="0") numberPadValue=d; else { const n = parseInt(numberPadValue+d); if(n<=numberPadConfig.max) numberPadValue+=d; } }
+    else { 
+        if(numberPadValue==="0") numberPadValue=d; 
+        else { 
+            const n = parseInt(numberPadValue+d); 
+            if(n<=numberPadConfig.max) numberPadValue+=d; 
+        } 
+    }
     document.getElementById('numberPadDisplay').innerText = numberPadValue;
 };
 
@@ -515,34 +524,54 @@ window.deleteNumberPadDigit = function() { numberPadValue = numberPadValue.slice
 window.clearNumberPad = function() { numberPadValue = ""; document.getElementById('numberPadDisplay').innerText = "0"; };
 window.closeNumberPad = function() { document.getElementById('numberPadModal').classList.remove('active'); };
 
+// --- MAIN NUMBER PAD CONFIRM LOGIC (CRITICAL FIX) ---
 window.confirmNumberPad = function() {
     if(currentNumberInput) {
-        const el = document.getElementById(currentNumberInput);
-        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) el.value = numberPadValue;
-
-        if(currentNumberInput.startsWith('vBp')) window.updateBpDisplay();
-        else if(currentNumberInput==='vPulse') document.getElementById('displayPulse').innerText = numberPadValue;
-        else if(currentNumberInput==='vHeight'||currentNumberInput==='vWeight') window.updateHeightWeightDisplay();
-        else if(currentNumberInput==='vDiscountPercent') {
-            document.getElementById('discountBtn').innerText = numberPadValue + "% ▼"; window.calcTotal();
+        // Handle Medicine Inputs
+        if (currentNumberInput.startsWith('med_')) {
+            const parts = currentNumberInput.split('_'); // e.g., med_qty_east_0 or med_price_west_2
+            const field = parts[1]; // qty or price
+            const type = parts[2]; // east or west
+            const idx = parseInt(parts[3]);
+            
+            // Update Data directly
+            window.updateMed(type, idx, field, numberPadValue);
+            
+            // Re-render list is handled in updateMed, but we ensure input value is set
+            const el = document.getElementById(currentNumberInput);
+            if(el) el.value = numberPadValue;
         }
-        else if(currentNumberInput.startsWith('proc_disc_')) {
+        // Handle Procedure Inputs
+        else if (currentNumberInput.startsWith('proc_days_')) {
+            const idx = parseInt(currentNumberInput.split('_')[2]);
+            window.updateProcDays(idx, numberPadValue);
+        }
+        else if (currentNumberInput.startsWith('proc_disc_')) {
             const idx = parseInt(currentNumberInput.split('_')[2]);
             if(currentVisit.procs[idx]) currentVisit.procs[idx].discount = parseInt(numberPadValue) || 0;
             window.renderProcList(); window.calcTotal();
         }
-        else if(currentNumberInput.startsWith('proc_days_')) {
-            const idx = parseInt(currentNumberInput.split('_')[2]);
-            if(currentVisit.procs[idx]) currentVisit.procs[idx].days = parseInt(numberPadValue) || 1;
-            window.renderProcList(); window.calcTotal();
+        // Handle Settings Inputs (Setting East/West Template Items)
+        else if (currentNumberInput.startsWith('set_')) {
+             const parts = currentNumberInput.split('_'); // set_east_qty_0
+             const el = document.getElementById(currentNumberInput);
+             if (el) el.value = numberPadValue;
         }
-        else if(currentNumberInput.startsWith('med_days_')) {
-            const parts = currentNumberInput.split('_');
-            window.updateMedDays(parts[2], parts[3], numberPadValue);
-        }
-        else if(currentNumberInput === 'vEastDays' || currentNumberInput === 'vWestDays' || 
-                currentNumberInput === 'vEastManualPrice' || currentNumberInput === 'vWestManualPrice') {
-            window.calcTotal();
+        // Standard inputs
+        else {
+            const el = document.getElementById(currentNumberInput);
+            if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) el.value = numberPadValue;
+
+            if(currentNumberInput.startsWith('vBp')) window.updateBpDisplay();
+            else if(currentNumberInput==='vPulse') document.getElementById('displayPulse').innerText = numberPadValue;
+            else if(currentNumberInput==='vHeight'||currentNumberInput==='vWeight') window.updateHeightWeightDisplay();
+            else if(currentNumberInput==='vDiscountPercent') {
+                document.getElementById('discountBtn').innerText = numberPadValue + "% ▼"; window.calcTotal();
+            }
+            else if(currentNumberInput === 'vEastDays' || currentNumberInput === 'vWestDays' || 
+                    currentNumberInput === 'vEastManualPrice' || currentNumberInput === 'vWestManualPrice' || currentNumberInput === 'vCost') {
+                window.calcTotal();
+            }
         }
     }
     window.closeNumberPad();
@@ -734,24 +763,13 @@ window.render = function() {
         let showPatient = false;
 
         if (currentMonthFilter === 'ALL') {
-            showPatient = true; // Show everyone matching keyword
+            showPatient = true; 
         } else {
-            // Check if patient has visited in the selected month
-            // OR if patient has NO visits at all (so you can find new patients to add visits)
-            // But usually with month filter, we only show people who visited that month.
-            // However, to allow adding visits to ANYONE, we should probably ONLY filter strictly if Keyword is empty.
-            // Let's stick to strict filtering for the list, users should switch to ALL to find others.
-            
             if (p.visits && p.visits.some(v => v.date && v.date.startsWith(currentMonthFilter))) {
                 showPatient = true;
             }
         }
 
-        // If searching, we might want to override month filter to find a patient to add a visit?
-        // Let's decide: If searching (kw not empty), SHOW ALL matches regardless of month filter?
-        // NO, that defeats the purpose of "filtering".
-        // Use "ALL" tab to search everyone.
-        
         if(showPatient) {
             return `<div class="patient-row"><div class="p-info" onclick="window.viewHistory('${p.id}')"><h3 class="font-bold text-lg text-[#3e2723]">${p.name}</h3><p class="text-xs text-[#8d6e63]">${p.year?'SN '+p.year:''} ${p.phone?'• '+p.phone:''}</p></div><div class="p-actions"><button onclick="window.handleEdit('${p.id}',event)" class="act-btn act-edit">SỬA</button><button onclick="window.handleExam('${p.id}',event)" class="act-btn act-exam">KHÁM</button><button onclick="window.handleDelete('${p.id}')" class="act-btn act-del">XÓA</button></div></div>`;
         }
@@ -874,11 +892,11 @@ window.renderEastTabsInSettings = function() {
     container.innerHTML = ''; 
     
     if (currentOpt.ingredients && currentOpt.ingredients.length > 0) {
-        currentOpt.ingredients.forEach(ing => {
-            window.renderEastIngInSettings(ing);
+        currentOpt.ingredients.forEach((ing, idx) => {
+            window.renderEastIngInSettings(ing, idx);
         });
     } else {
-        window.renderEastIngInSettings(); 
+        window.renderEastIngInSettings({}, 0); 
     }
 };
 
@@ -920,41 +938,57 @@ window.saveCurrentTabToTemp = function() {
     tempEastOptions[currentEastOptionIndex].ingredients = ingredients;
 };
 
-window.renderEastIngInSettings = function(ing = {}) {
+// UPDATED SETTINGS RENDER WITH IDs
+window.renderEastIngInSettings = function(ing = {}, idx = 0) {
     const container = document.getElementById('eastIngredientsContainer');
     const div = document.createElement('div');
+    const uniqueID = Date.now() + Math.random().toString(36).substr(2, 9);
     div.className = 'disease-ingredient-row med-row-grid';
     div.innerHTML = `
         <button onclick="this.parentElement.remove()" class="med-delete-btn">&times;</button>
         <div class="med-row-name">
             <input type="text" class="east-ingredient-name song-input ipad-input-fix" placeholder="Tên vị thuốc..." value="${ing.name || ''}" onfocus="this.blur = null"> 
         </div>
-        <div class="med-input-group"><label>S.Lượng</label><input type="number" class="east-ingredient-qty med-input-large ipad-input-fix" value="${ing.qty || 10}" onfocus="this.blur()"></div>
-        <div class="med-input-group"><label>Đơn Giá</label><input type="number" class="east-ingredient-price med-input-large ipad-input-fix" value="${ing.price || 0}" onfocus="this.blur()"></div>
+        <div class="med-input-group"><label>S.Lượng</label>
+            <input type="text" id="set_east_qty_${uniqueID}" class="east-ingredient-qty med-input-large ipad-input-fix" value="${ing.qty || 10}" 
+            onclick="window.openNumberPad('set_east_qty_${uniqueID}', 'Số lượng', '0-999', ${ing.qty || 10})" readonly>
+        </div>
+        <div class="med-input-group"><label>Đơn Giá</label>
+            <input type="text" id="set_east_price_${uniqueID}" class="east-ingredient-price med-input-large ipad-input-fix" value="${ing.price || 0}" 
+            onclick="window.openNumberPad('set_east_price_${uniqueID}', 'Đơn giá', '0-999999', ${ing.price || 0})" readonly>
+        </div>
         <input type="hidden" class="east-ingredient-days" value="1">
     `;
     container.appendChild(div);
 };
 
-window.addEastIngredient = function() { window.renderEastIngInSettings(); };
+window.addEastIngredient = function() { window.renderEastIngInSettings({}, document.querySelectorAll('#eastIngredientsContainer > div').length); };
 
-window.renderWestMedInSettings = function(med = {}) {
+// UPDATED SETTINGS RENDER WEST
+window.renderWestMedInSettings = function(med = {}, idx = 0) {
     const container = document.getElementById('westMedicinesContainer');
     const div = document.createElement('div');
+    const uniqueID = Date.now() + Math.random().toString(36).substr(2, 9);
     div.className = 'disease-ingredient-row med-row-grid';
     div.innerHTML = `
         <button onclick="this.parentElement.remove()" class="med-delete-btn">&times;</button>
         <div class="med-row-name">
             <input type="text" class="west-medicine-name song-input ipad-input-fix" placeholder="Tên thuốc mẫu..." value="${med.name || ''}" onfocus="this.blur = null">
         </div>
-        <div class="med-input-group"><label>S.Lượng</label><input type="number" class="west-medicine-qty med-input-large ipad-input-fix" value="${med.qty || 2}" onfocus="this.blur()"></div>
-        <div class="med-input-group"><label>Đơn Giá</label><input type="number" class="west-medicine-price med-input-large ipad-input-fix" value="${med.price || 0}" onfocus="this.blur()"></div>
+        <div class="med-input-group"><label>S.Lượng</label>
+            <input type="text" id="set_west_qty_${uniqueID}" class="west-medicine-qty med-input-large ipad-input-fix" value="${med.qty || 2}" 
+            onclick="window.openNumberPad('set_west_qty_${uniqueID}', 'Số lượng', '0-999', ${med.qty || 2})" readonly>
+        </div>
+        <div class="med-input-group"><label>Đơn Giá</label>
+            <input type="text" id="set_west_price_${uniqueID}" class="west-medicine-price med-input-large ipad-input-fix" value="${med.price || 0}" 
+            onclick="window.openNumberPad('set_west_price_${uniqueID}', 'Đơn giá', '0-999999', ${med.price || 0})" readonly>
+        </div>
         <input type="hidden" class="west-medicine-days" value="1">
     `;
     container.appendChild(div);
 };
 
-window.addWestMedicine = function() { window.renderWestMedInSettings(); };
+window.addWestMedicine = function() { window.renderWestMedInSettings({}, document.querySelectorAll('#westMedicinesContainer > div').length); };
 
 window.saveDisease = async function() {
     const name = document.getElementById('diseaseName').value.trim();
@@ -1112,7 +1146,7 @@ window.renderProcList = function() {
         procDiv.innerHTML = `
             <button onclick="window.removeProcedure(${idx})" class="med-delete-btn">&times;</button>
             <div class="med-row-name"><div class="flex justify-between items-center"><span>${proc.name}</span><span class="text-xs font-normal text-gray-500">${proc.price.toLocaleString()}đ/lần</span></div></div>
-            <div class="med-input-group"><label>Số ngày</label><input type="number" min="1" value="${proc.days||1}" id="proc_days_${idx}" onclick="window.openNumberPad('proc_days_${idx}', 'Số ngày thủ thuật', '1-30', ${proc.days||1})" readonly class="med-input-large bg-white ipad-input-fix" onfocus="this.blur()"></div>
+            <div class="med-input-group"><label>Số ngày</label><input type="text" min="1" value="${proc.days||1}" id="proc_days_${idx}" onclick="window.openNumberPad('proc_days_${idx}', 'Số ngày thủ thuật', '1-30', ${proc.days||1})" readonly class="med-input-large bg-white ipad-input-fix"></div>
             <div class="med-input-group"><label>Giảm giá</label><button onclick="window.openNumberPad('proc_disc_${idx}', 'Giảm giá (%)', '0-100', ${proc.discount||0})" id="proc_disp_${idx}" class="med-input-large text-blue-600 bg-white border-dashed">${proc.discount||0}%</button></div>
             <div class="med-input-group"><label>Thành tiền</label><div class="med-input-large flex items-center justify-center bg-gray-100 text-base">${totalPrice.toLocaleString()}</div></div>
             <div class="med-usage-row">
@@ -1180,7 +1214,7 @@ window.applyEasternSample = function(i) {
     }
 };
 
-// Updated: Render Med List with 2 columns (qty, price) + total, removing useless day input
+// Updated: Render Med List with 2 columns (qty, price) + total, WITH ONCLICK FOR NUMBER PAD
 window.renderMedList = function(type) {
     const list = document.getElementById(type==='east'?'vMedListEast':'vMedListWest');
     const data = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
@@ -1194,8 +1228,20 @@ window.renderMedList = function(type) {
         <div class="med-row-grid">
             <button onclick="window.removeMed('${type}',${i})" class="med-delete-btn">&times;</button>
             <div class="med-row-name"><input type="text" value="${m.name}" onchange="window.updateMed('${type}',${i},'name',this.value)" class="song-input ipad-input-fix" placeholder="Nhập tên thuốc..." onfocus="this.blur=null"></div>
-            <div class="med-input-group"><label>S.Lượng (${type==='east'?'g':'viên'})</label><input type="number" value="${m.qty}" onchange="window.updateMed('${type}',${i},'qty',this.value)" class="med-input-large ipad-input-fix" onfocus="this.blur()"></div>
-            <div class="med-input-group"><label>Đơn giá</label><input type="number" value="${m.price||0}" onchange="window.updateMed('${type}',${i},'price',this.value)" class="med-input-large ipad-input-fix text-right" onfocus="this.blur()"></div>
+            
+            <!-- FIXED INPUTS: Added ID and ONCLICK to trigger Number Pad -->
+            <div class="med-input-group"><label>S.Lượng (${type==='east'?'g':'viên'})</label>
+                <input type="text" id="med_qty_${type}_${i}" value="${m.qty}" 
+                onclick="window.openNumberPad('med_qty_${type}_${i}', 'Số lượng', '0-999', ${m.qty})" 
+                readonly class="med-input-large ipad-input-fix">
+            </div>
+            
+            <div class="med-input-group"><label>Đơn giá</label>
+                <input type="text" id="med_price_${type}_${i}" value="${m.price||0}" 
+                onclick="window.openNumberPad('med_price_${type}_${i}', 'Đơn giá', '0-9999999', ${m.price||0})" 
+                readonly class="med-input-large ipad-input-fix text-right">
+            </div>
+            
             <div class="med-input-group"><label>Thành tiền</label><div class="med-input-large flex items-center justify-center bg-gray-100 text-sm font-bold text-gray-500">${((m.qty||0)*(m.price||0)*days).toLocaleString()}</div></div>
             <div class="med-usage-row">
                 <button class="time-btn-large ${(m.usage||'').includes('Sáng')?'active':''}" onclick="window.toggleMedUsage('${type}',${i},'Sáng')">Sáng</button>
@@ -1215,6 +1261,8 @@ window.updateMed = function(type,i,f,v) {
     const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest; 
     meds[i][f] = (f==='qty'||f==='price')?parseFloat(v):v; 
     window.calcTotal(); 
+    // Optimization: If specific field update, maybe only refresh total, but safe to render all
+    if(f==='qty'||f==='price') window.renderMedList(type);
 };
 window.updateMedDays = function(type,i,days) {
     // Legacy function, kept to prevent errors if called, but does nothing to UI now
@@ -1279,10 +1327,10 @@ window.calcTotal = function() {
     
     // Update displayed list to reflect new totals per item
     // We only re-render if the focused element is NOT an input in the list to avoid losing focus
-    if (!document.activeElement || !document.activeElement.classList.contains('med-input-large')) {
+    // if (!document.activeElement || !document.activeElement.classList.contains('med-input-large')) {
          // Optimization: Don't full re-render constantly on typing, but do it when days change
          // For now, we rely on the total display at bottom, individual row updates on next interaction
-    }
+    // }
     
     document.getElementById('displayMedTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
     document.getElementById('displayMedTotalWest').innerText = westTotal.toLocaleString() + 'đ';
@@ -1367,6 +1415,7 @@ window.processSave = async function(print) {
     } catch(e) { alert("Lỗi: "+e.message); }
 };
 
+// --- PRINTING LOGIC (UPDATED TO MATCH NEW HTML IDs) ---
 window.preparePrint = function(type) { currentPrintType = type; window.doPrint(type); };
 
 window.doPrint = function(type) {
@@ -1389,106 +1438,123 @@ window.doPrint = function(type) {
     const westNote = document.getElementById('vWestNote').value;
     const manualPriceEast = parseInt(document.getElementById('vEastManualPrice').value) || 0;
     
+    // 1. POPULATE EAST PRESCRIPTION
     if (type === 'east' || type === 'both') {
-        document.getElementById('printEast').classList.remove('hidden');
-        document.getElementById('prTitleEast').innerText = clinicTitle;
-        document.getElementById('prDocEast').innerText = doctorName;
-        document.getElementById('prDateEast').innerText = 'Ngày: ' + visitDate;
-        document.getElementById('prNameEast').innerText = p.name;
-        document.getElementById('prYearEast').innerText = p.year ? `(${p.year})` : '';
-        document.getElementById('prDisEast').innerText = disease;
-        document.getElementById('prSymEast').innerText = document.getElementById('vSpecial').value || '';
-        document.getElementById('prDaysEast').innerText = eastDays;
-        document.getElementById('prUsageEast').innerText = eastNote || 'Sắc uống ngày 1 thang.';
-        document.getElementById('prTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
-        let eastHtml = '';
-        currentVisit.rxEast.forEach(m => {
-            eastHtml += `<tr><td class="p-1">${m.name}</td><td class="p-1 text-right">${m.qty || 0}g</td><td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td><td class="p-1 text-right">${manualPriceEast > 0 ? '-' : ((m.qty||0)*(m.price||0)*eastDays).toLocaleString() + 'đ'}</td></tr>`;
-        });
-        if(manualPriceEast > 0) eastHtml += `<tr><td class="p-1 font-bold" colspan="3">Giá trọn gói (${eastDays} thang)</td><td class="p-1 text-right font-bold">${eastTotal.toLocaleString()}đ</td></tr>`;
-        document.getElementById('prTableEast').innerHTML = eastHtml;
-    }
-    
-    if (type === 'west' || type === 'both') {
-        document.getElementById('printWest').classList.remove('hidden');
-        document.getElementById('prTitleWest').innerText = clinicTitle;
-        document.getElementById('prDocWest').innerText = doctorName;
-        document.getElementById('prDateWest').innerText = 'Ngày: ' + visitDate;
-        document.getElementById('prNameWest').innerText = p.name;
-        document.getElementById('prYearWest').innerText = p.year ? `(${p.year})` : '';
-        document.getElementById('prDisWest').innerText = disease;
-        document.getElementById('prDaysWest').innerText = westDays;
-        document.getElementById('prUsageWest').innerText = westNote || 'Uống theo đơn.';
-        document.getElementById('prTotalWest').innerText = westTotal.toLocaleString() + 'đ';
-        let westHtml = '';
-        currentVisit.rxWest.forEach(m => {
-            westHtml += `<tr><td class="p-1">${m.name}</td><td class="p-1 text-right">${m.qty || 0} viên</td><td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td><td class="p-1 text-right">${((m.qty||0)*(m.price||0)*westDays).toLocaleString()}đ</td></tr>`;
-        });
-        document.getElementById('prTableWest').innerHTML = westHtml;
-    }
-    
-    if (type === 'both') {
-        document.getElementById('printBoth').classList.remove('hidden');
-        document.getElementById('printEast').classList.add('hidden');
-        document.getElementById('printWest').classList.add('hidden');
-        document.getElementById('prTitleBoth').innerText = clinicTitle;
-        document.getElementById('prDocBoth').innerText = doctorName;
-        document.getElementById('prDateBoth').innerText = 'Ngày: ' + visitDate;
-        document.getElementById('prNameBoth').innerText = p.name;
-        document.getElementById('prYearBoth').innerText = p.year ? `(${p.year})` : '';
-        document.getElementById('prDisBoth').innerText = disease;
-        document.getElementById('prSymBoth').innerText = document.getElementById('vSpecial').value || '';
-        document.getElementById('prDaysBothEast').innerText = eastDays;
-        document.getElementById('prNoteBothEast').innerText = eastNote || 'Sắc uống.';
-        document.getElementById('prDaysBothWest').innerText = westDays;
-        document.getElementById('prNoteBothWest').innerText = westNote || 'Uống theo đơn.';
-        let eastBothHtml = ''; currentVisit.rxEast.forEach(m => { eastBothHtml += `<tr><td class="p-1">${m.name}</td><td class="p-1 text-right">${m.qty || 0}g</td><td class="p-1 text-right">${m.usage || ''}</td></tr>`; });
-        document.getElementById('prTableBothEast').innerHTML = eastBothHtml;
-        let westBothHtml = ''; currentVisit.rxWest.forEach(m => { westBothHtml += `<tr><td class="p-1">${m.name}</td><td class="p-1 text-right">${m.qty || 0} viên</td><td class="p-1 text-right">${m.usage || ''}</td></tr>`; });
-        document.getElementById('prTableBothWest').innerHTML = westBothHtml;
-    }
-    
-    if (type === 'invoice') {
-        document.getElementById('printInvoice').classList.remove('hidden');
-        document.getElementById('prTitleInvoice').innerText = clinicTitle;
-        document.getElementById('prDocInvoice').innerText = doctorName;
-        document.getElementById('prDateInvoice').innerText = 'Ngày xuất: ' + new Date().toLocaleDateString('vi-VN');
-        document.getElementById('prVisitDateInvoice').innerText = visitDate;
-        document.getElementById('prNameInvoice').innerText = p.name;
-        document.getElementById('prYearInvoice').innerText = p.year ? `(${p.year})` : '';
-        document.getElementById('prDisInvoice').innerText = disease;
-        let invoiceHtml = '';
-        currentVisit.procs.forEach(proc => {
-            const tPrice = Math.round((proc.price||0) * (proc.days||1) * (1 - (proc.discount||0)/100));
-            invoiceHtml += `<tr><td class="p-1">${proc.name}</td><td class="p-1 text-right">${proc.days||1}</td><td class="p-1 text-right">${(proc.price||0).toLocaleString()}đ</td><td class="p-1 text-right">${tPrice.toLocaleString()}đ</td></tr>`;
-        });
-        if (manualPriceEast > 0) {
-             invoiceHtml += `<tr><td class="p-1 font-bold">Thuốc Đông Y (Trọn gói)</td><td class="p-1 text-right">${eastDays} thang</td><td class="p-1 text-right">${manualPriceEast.toLocaleString()}đ</td><td class="p-1 text-right">${eastTotal.toLocaleString()}đ</td></tr>`;
-        } else {
+        const eastSec = document.getElementById('printEast');
+        if(eastSec) {
+            eastSec.classList.remove('hidden');
+            document.getElementById('prTitleEast').innerText = clinicTitle;
+            document.getElementById('prDocEast').innerText = doctorName;
+            document.getElementById('prDateEast').innerText = 'Ngày: ' + visitDate;
+            document.getElementById('prNameEast').innerText = p.name;
+            document.getElementById('prYearEast').innerText = p.year ? `(${p.year})` : '';
+            document.getElementById('prDisEast').innerText = disease;
+            document.getElementById('prSymEast').innerText = document.getElementById('vSpecial').value || '';
+            document.getElementById('prDaysEast').innerText = eastDays;
+            document.getElementById('prUsageEast').innerText = eastNote || 'Sắc uống ngày 1 thang.';
+            document.getElementById('prTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
+            let eastHtml = '';
             currentVisit.rxEast.forEach(m => {
-                const tPrice = (m.qty||0) * (m.price||0) * eastDays;
-                invoiceHtml += `<tr><td class="p-1">${m.name}</td><td class="p-1 text-right">${m.qty}g x ${eastDays}</td><td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td><td class="p-1 text-right">${tPrice.toLocaleString()}đ</td></tr>`;
+                eastHtml += `<tr><td class="py-1 border-b border-gray-300">${m.name}</td><td class="py-1 text-right border-b border-gray-300">${m.qty || 0}g</td><td class="py-1 text-right border-b border-gray-300">${(m.price||0).toLocaleString()}đ</td><td class="py-1 text-right border-b border-gray-300">${manualPriceEast > 0 ? '-' : ((m.qty||0)*(m.price||0)*eastDays).toLocaleString() + 'đ'}</td></tr>`;
             });
+            if(manualPriceEast > 0) eastHtml += `<tr><td class="p-1 font-bold" colspan="3">Giá trọn gói (${eastDays} thang)</td><td class="p-1 text-right font-bold">${eastTotal.toLocaleString()}đ</td></tr>`;
+            document.getElementById('prTableEast').innerHTML = eastHtml;
         }
-        if (parseInt(document.getElementById('vWestManualPrice').value) > 0) {
-             invoiceHtml += `<tr><td class="p-1 font-bold">Thuốc Tây Y (Trọn gói)</td><td class="p-1 text-right">${westDays} ngày</td><td class="p-1 text-right">${parseInt(document.getElementById('vWestManualPrice').value).toLocaleString()}đ</td><td class="p-1 text-right">${westTotal.toLocaleString()}đ</td></tr>`;
-        } else {
-            currentVisit.rxWest.forEach(m => {
-                const tPrice = (m.qty||0) * (m.price||0) * westDays;
-                invoiceHtml += `<tr><td class="p-1">${m.name}</td><td class="p-1 text-right">${m.qty}v x ${westDays}</td><td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td><td class="p-1 text-right">${tPrice.toLocaleString()}đ</td></tr>`;
-            });
-        }
-        document.getElementById('prTableInvoice').innerHTML = invoiceHtml;
-        document.getElementById('prProcTotalInvoice').innerText = procTotal.toLocaleString() + 'đ';
-        document.getElementById('prEastTotalInvoice').innerText = eastTotal.toLocaleString() + 'đ';
-        document.getElementById('prWestTotalInvoice').innerText = westTotal.toLocaleString() + 'đ';
-        document.getElementById('prGrandTotalInvoice').innerText = total.toLocaleString() + 'đ';
-        document.getElementById('prDiscInvoice').innerText = discP + '%';
-        document.getElementById('prFinalInvoice').innerText = finalTotal.toLocaleString() + 'đ';
-        if (window.config.qrCodeImage) { document.getElementById('prQrInvoice').src = window.config.qrCodeImage; document.getElementById('prQrContainerInvoice').classList.remove('hidden'); } else document.getElementById('prQrContainerInvoice').classList.add('hidden');
     }
     
-    setTimeout(() => { window.print(); document.getElementById('printModal').classList.remove('active'); }, 300);
+    // 2. POPULATE WEST PRESCRIPTION
+    if (type === 'west' || type === 'both') {
+        const westSec = document.getElementById('printWest');
+        if(westSec) {
+            westSec.classList.remove('hidden');
+            document.getElementById('prTitleWest').innerText = clinicTitle;
+            document.getElementById('prDocWest').innerText = doctorName;
+            document.getElementById('prDateWest').innerText = 'Ngày: ' + visitDate;
+            document.getElementById('prNameWest').innerText = p.name;
+            document.getElementById('prYearWest').innerText = p.year ? `(${p.year})` : '';
+            document.getElementById('prDisWest').innerText = disease;
+            document.getElementById('prDaysWest').innerText = westDays;
+            document.getElementById('prUsageWest').innerText = westNote || 'Uống theo đơn.';
+            document.getElementById('prTotalWest').innerText = westTotal.toLocaleString() + 'đ';
+            let westHtml = '';
+            currentVisit.rxWest.forEach(m => {
+                westHtml += `<tr><td class="py-1 border-b border-gray-300">${m.name}</td><td class="py-1 text-right border-b border-gray-300">${m.qty || 0} viên</td><td class="py-1 text-right border-b border-gray-300">${(m.price||0).toLocaleString()}đ</td><td class="py-1 text-right border-b border-gray-300">${((m.qty||0)*(m.price||0)*westDays).toLocaleString()}đ</td></tr>`;
+            });
+            document.getElementById('prTableWest').innerHTML = westHtml;
+        }
+    }
+    
+    // 3. POPULATE BOTH
+    if (type === 'both') {
+        const bothSec = document.getElementById('printBoth');
+        if(bothSec) {
+            bothSec.classList.remove('hidden');
+            document.getElementById('printEast').classList.add('hidden'); // Hide individual ones
+            document.getElementById('printWest').classList.add('hidden');
+            
+            document.getElementById('prTitleBoth').innerText = clinicTitle;
+            document.getElementById('prDocBoth').innerText = doctorName;
+            document.getElementById('prDateBoth').innerText = 'Ngày: ' + visitDate;
+            document.getElementById('prNameBoth').innerText = p.name;
+            document.getElementById('prYearBoth').innerText = p.year ? `(${p.year})` : '';
+            document.getElementById('prDisBoth').innerText = disease;
+            document.getElementById('prSymBoth').innerText = document.getElementById('vSpecial').value || '';
+            document.getElementById('prDaysBothEast').innerText = eastDays;
+            document.getElementById('prNoteBothEast').innerText = eastNote || 'Sắc uống.';
+            document.getElementById('prDaysBothWest').innerText = westDays;
+            document.getElementById('prNoteBothWest').innerText = westNote || 'Uống theo đơn.';
+            let eastBothHtml = ''; currentVisit.rxEast.forEach(m => { eastBothHtml += `<tr><td class="p-1 border-b border-gray-200">${m.name}</td><td class="p-1 text-right border-b border-gray-200">${m.qty || 0}g</td><td class="p-1 text-right border-b border-gray-200">${m.usage || ''}</td></tr>`; });
+            document.getElementById('prTableBothEast').innerHTML = eastBothHtml;
+            let westBothHtml = ''; currentVisit.rxWest.forEach(m => { westBothHtml += `<tr><td class="p-1 border-b border-gray-200">${m.name}</td><td class="p-1 text-right border-b border-gray-200">${m.qty || 0} viên</td><td class="p-1 text-right border-b border-gray-200">${m.usage || ''}</td></tr>`; });
+            document.getElementById('prTableBothWest').innerHTML = westBothHtml;
+        }
+    }
+    
+    // 4. POPULATE INVOICE
+    if (type === 'invoice') {
+        const invSec = document.getElementById('printInvoice');
+        if(invSec) {
+            invSec.classList.remove('hidden');
+            document.getElementById('prTitleInvoice').innerText = clinicTitle;
+            document.getElementById('prDocInvoice').innerText = doctorName;
+            document.getElementById('prDateInvoice').innerText = 'Ngày xuất: ' + new Date().toLocaleDateString('vi-VN');
+            document.getElementById('prVisitDateInvoice').innerText = visitDate;
+            document.getElementById('prNameInvoice').innerText = p.name;
+            document.getElementById('prYearInvoice').innerText = p.year ? `(${p.year})` : '';
+            document.getElementById('prDisInvoice').innerText = disease;
+            let invoiceHtml = '';
+            currentVisit.procs.forEach(proc => {
+                const tPrice = Math.round((proc.price||0) * (proc.days||1) * (1 - (proc.discount||0)/100));
+                invoiceHtml += `<tr><td class="py-1">${proc.name}</td><td class="py-1 text-right">${proc.days||1}</td><td class="py-1 text-right">${(proc.price||0).toLocaleString()}</td><td class="py-1 text-right">${tPrice.toLocaleString()}</td></tr>`;
+            });
+            if (manualPriceEast > 0) {
+                 invoiceHtml += `<tr><td class="py-1 font-bold">Thuốc Đông Y (Gói)</td><td class="py-1 text-right">${eastDays}t</td><td class="py-1 text-right">${manualPriceEast.toLocaleString()}</td><td class="py-1 text-right">${eastTotal.toLocaleString()}</td></tr>`;
+            } else {
+                currentVisit.rxEast.forEach(m => {
+                    const tPrice = (m.qty||0) * (m.price||0) * eastDays;
+                    invoiceHtml += `<tr><td class="py-1">${m.name}</td><td class="py-1 text-right">${m.qty}g x ${eastDays}</td><td class="py-1 text-right">${(m.price||0).toLocaleString()}</td><td class="py-1 text-right">${tPrice.toLocaleString()}</td></tr>`;
+                });
+            }
+            if (parseInt(document.getElementById('vWestManualPrice').value) > 0) {
+                 invoiceHtml += `<tr><td class="py-1 font-bold">Thuốc Tây Y (Gói)</td><td class="py-1 text-right">${westDays}n</td><td class="py-1 text-right">${parseInt(document.getElementById('vWestManualPrice').value).toLocaleString()}</td><td class="py-1 text-right">${westTotal.toLocaleString()}</td></tr>`;
+            } else {
+                currentVisit.rxWest.forEach(m => {
+                    const tPrice = (m.qty||0) * (m.price||0) * westDays;
+                    invoiceHtml += `<tr><td class="py-1">${m.name}</td><td class="py-1 text-right">${m.qty}v x ${westDays}</td><td class="py-1 text-right">${(m.price||0).toLocaleString()}</td><td class="py-1 text-right">${tPrice.toLocaleString()}</td></tr>`;
+                });
+            }
+            document.getElementById('prTableInvoice').innerHTML = invoiceHtml;
+            document.getElementById('prProcTotalInvoice').innerText = procTotal.toLocaleString() + 'đ';
+            document.getElementById('prEastTotalInvoice').innerText = eastTotal.toLocaleString() + 'đ';
+            document.getElementById('prWestTotalInvoice').innerText = westTotal.toLocaleString() + 'đ';
+            document.getElementById('prGrandTotalInvoice').innerText = total.toLocaleString() + 'đ';
+            document.getElementById('prDiscInvoice').innerText = discP + '%';
+            document.getElementById('prFinalInvoice').innerText = finalTotal.toLocaleString() + 'đ';
+            if (window.config.qrCodeImage) { document.getElementById('prQrInvoice').src = window.config.qrCodeImage; document.getElementById('prQrContainerInvoice').classList.remove('hidden'); } else document.getElementById('prQrContainerInvoice').classList.add('hidden');
+        }
+    }
+    
+    setTimeout(() => { window.print(); document.getElementById('printModal').classList.remove('active'); }, 500);
 };
 
 window.closeModals = function() { document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active')); };
@@ -1515,20 +1581,13 @@ window.saveSettings = async function() {
     await window.saveConfig(); window.closeModals();
 };
 
-// --- TU CHAN CONFIGURATION (NEWLY ADDED) ---
+// --- TU CHAN CONFIGURATION ---
 window.renderTuChanConfig = function() {
-    // Defines keys to iterate over
     const keys = ['vong', 'van', 'vanhoi', 'thiet', 'thietchan', 'machchan'];
     
     keys.forEach(key => {
-        // ASSUMPTION: The list container ID in HTML is named 'setting_list_' + key name
-        // Example: 'setting_list_vong', 'setting_list_van'
         const container = document.getElementById('setting_list_' + key);
-        
-        if (!container) {
-            console.warn(`Không tìm thấy element ID: setting_list_${key}. Vui lòng kiểm tra file HTML.`);
-            return;
-        }
+        if (!container) return;
 
         container.innerHTML = (window.config.tuChan[key] || []).map((item, index) => `
             <div class="flex justify-between items-center bg-gray-50 p-2 mb-1 rounded border border-gray-100">
@@ -1540,15 +1599,9 @@ window.renderTuChanConfig = function() {
 };
 
 window.addTuChanItem = async function(key) {
-    // ASSUMPTION: The input ID in HTML is named 'setting_new_' + key name
-    // Example: 'setting_new_vong', 'setting_new_van'
     const inputId = 'setting_new_' + key;
     const input = document.getElementById(inputId);
-    
-    if (!input) {
-        alert(`Lỗi: Không tìm thấy ô nhập liệu (ID: ${inputId}) trong HTML.`);
-        return;
-    }
+    if (!input) return;
     
     const value = input.value.trim();
     if (!value) return;
@@ -1699,5 +1752,4 @@ window.renderProcSettings = function() { document.getElementById('procList').inn
 window.addProc = async function() { const n=document.getElementById('newProcName').value, p=parseInt(document.getElementById('newProcPrice').value); if(n&&p) { window.config.procs.push({name:n,price:p}); document.getElementById('newProcName').value=''; document.getElementById('newProcPrice').value=''; window.renderProcSettings(); await window.saveConfig(); } };
 window.deleteProc = async function(i) { if(confirm('Xóa dịch vụ này?')) { window.config.procs.splice(i,1); window.renderProcSettings(); await window.saveConfig(); } };
 window.onload();
-
 
