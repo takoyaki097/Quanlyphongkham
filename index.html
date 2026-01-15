@@ -3,404 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>YHCT Pro - V49 với Thủ thuật & Toa thuốc Nâng cao</title>
+    <title>YHCT Pro - Quản lý Phòng Khám</title>
+    <!-- CSS Reset & Base -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- CÁC THƯ VIỆN CẦN THIẾT -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <!-- THƯ VIỆN LOCALFORAGE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --song-bg: #fdfbf7;
-            --song-ink: #2c2c2c;
-            --song-wood: #5d4037;
-            --song-accent: #8d6e63;
-        }
-
-        body { 
-            background-color: var(--song-bg); 
-            font-family: 'Noto Sans', sans-serif; 
-            color: var(--song-ink); 
-            padding-bottom: 120px;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        input, textarea { -webkit-user-select: text !important; user-select: text !important; }
-
-        h1, h2, h3, .serif { font-family: 'Noto Serif', serif; }
-
-        #mainHeader { 
-            background-color: var(--song-wood); 
-            border-radius: 0 0 24px 24px; min-height: 160px; 
-            display: flex; align-items: center; justify-content: center; 
-            box-shadow: 0 4px 15px rgba(93, 64, 55, 0.2);
-            position: relative; overflow: hidden; z-index: 10;
-            background-size: cover;
-            background-position: center;
-            transition: all 0.3s ease;
-        }
+        /* --- CSS MỚI: GIAO DIỆN THẺ THUỐC/THỦ THUẬT LỚN --- */
         
-        #headerOverlay {
-            position: absolute;
-            inset: 0;
-            background: black;
-            opacity: 0;
-            z-index: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .header-card {
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid #d7ccc8; border-radius: 16px; 
-            padding: 20px 24px; width: 92%; max-width: 800px; 
-            display: flex; justify-content: space-between; align-items: flex-end;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); z-index: 11;
-            transition: all 0.3s ease;
+        /* Container chính cho mỗi dòng thuốc/thủ thuật */
+        .med-row-grid {
+            display: grid;
+            /* Chia làm 3 cột đều nhau cho các ô nhập số */
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 10px;
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #d7ccc8;
+            border-radius: 16px; /* Bo góc tròn hơn */
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             position: relative;
         }
+
+        /* Dòng tên thuốc/thủ thuật: Luôn nằm trên cùng, chiếm hết chiều ngang */
+        .med-row-name {
+            grid-column: 1 / -1;
+            margin-bottom: 5px;
+            padding-right: 35px; /* Chừa chỗ cho nút xóa */
+        }
         
-        .header-card.transparent-mode {
-            background: rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(2px);
-        }
-        .header-card.transparent-mode h1 { color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .header-card.transparent-mode p { color: #eee !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-        .header-card.transparent-mode .header-sep { background-color: rgba(255,255,255,0.6) !important; }
-
-        .btn-glass { 
-            background: #fff; border: 1px solid #d7ccc8; color: var(--song-wood); 
-            font-weight: 700; border-radius: 12px; cursor: pointer; transition: 0.1s;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-            -webkit-user-select: none; user-select: none;
-        }
-        .btn-glass:active { transform: translateY(1px); background: #efebe9; }
-        
-        .btn-primary { 
-            background: var(--song-wood); color: #fff; border: none; 
-            font-weight: 700; border-radius: 12px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 3px 8px rgba(93, 64, 55, 0.3); 
-            -webkit-user-select: none; user-select: none;
-        }
-        .btn-primary:active { transform: scale(0.98); opacity: 0.95; }
-
-        .song-input { 
-            background: #fff; border: 1px solid #d7ccc8; color: var(--song-ink); 
-            border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 15px; outline: none;
-            transition: all 0.2s;
-            -webkit-user-select: text; user-select: text;
-            -webkit-tap-highlight-color: rgba(0,0,0,0);
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        .song-input:focus { border-color: var(--song-wood); background: #fffcf7; }
-        .song-label { font-size: 11px; font-weight: 700; color: #8d6e63; text-transform: uppercase; margin-bottom: 4px; display: block; }
-
-        .patient-row {
-            background: #fff; border: 1px solid #eee; border-radius: 12px; 
-            margin-bottom: 12px; display: flex; overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            position: relative; z-index: 1; min-height: 80px;
-        }
-        .p-info { flex: 1; padding: 14px; cursor: pointer; }
-        .p-actions { display: flex; gap: 1px; z-index: 2; }
-        .act-btn { 
-            width: 55px; border: none; font-size: 10px; font-weight: 800; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%;
-            -webkit-user-select: none; user-select: none;
-        }
-        .act-edit { background: #fafafa; color: #757575; border-left: 1px solid #eee; }
-        .act-exam { background: #e0e5df; color: #2e4a3d; } 
-        .act-del { background: #ffebee; color: #c62828; }
-        .act-del:active { background: #ffcdd2; }
-
-        .modal { display: none; position: fixed; inset: 0; background: rgba(62, 39, 35, 0.6); z-index: 2000; align-items: center; justify-content: center; padding: 10px; backdrop-filter: blur(3px); }
-        .modal.active { display: flex; animation: fadeUp 0.2s; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .modal-box { 
-            background: #fff; width: 100%; max-width: 650px; 
-            height: 85vh;
-            max-height: 85dvh; 
-            border-radius: 20px; 
-            display: flex; flex-direction: column;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.25); border: 1px solid #d7ccc8;
-            overflow: hidden;
+        .med-row-name input, .med-row-name div {
+            font-size: 16px;
+            font-weight: 700;
+            color: #3e2723;
+            width: 100%;
+            border: none;
+            border-bottom: 1px dashed #bdbdbd;
+            padding: 5px 0;
+            background: transparent;
+            outline: none;
         }
 
-        .modal-header { flex-shrink: 0; padding: 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fff; }
-        
-        .modal-body { 
-            flex-grow: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            background: #fff; 
-            -webkit-overflow-scrolling: touch; 
-        }
-
-        .modal-footer {
-            flex-shrink: 0;
-            padding: 16px;
-            padding-bottom: 24px;
-            background: #fff;
-            border-top: 1px solid #eee;
-            display: flex; gap: 10px;
-            z-index: 50;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.03);
-        }
-
-        .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px; background: #fafafa; border-bottom: 1px solid #eee; flex-shrink: 0; }
-        .tab-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #eee; background: #fff; color: #9e9e9e; font-size: 13px; font-weight: 600; white-space: nowrap; -webkit-user-select: none; cursor: pointer; }
-        .tab-btn.active { background: var(--song-wood); color: #fff; border-color: var(--song-wood); }
-
-        /* NUMBER INPUT STYLES - FIXED FOR IPAD */
-        .number-input-container { position: relative; }
-        .number-input-display {
-            width: 100%; padding: 12px; text-align: center; font-size: 18px; font-weight: bold;
-            color: #3e2723; background: #fff; border: 2px solid #d7ccc8; border-radius: 12px; cursor: pointer;
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: rgba(0,0,0,0);
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        .number-input-display:focus { outline: none; border-color: var(--song-wood); background: #fffcf7; }
-        .number-input-label { font-size: 10px; font-weight: bold; color: #8d6e63; text-transform: uppercase; text-align: center; margin-bottom: 5px; }
-        
-        /* NUMBER PAD MODAL */
-        .number-pad-modal { display: none; position: fixed; inset: 0; background: rgba(62, 39, 35, 0.8); z-index: 3000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
-        .number-pad-modal.active { display: flex; }
-        .number-pad-container { background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); }
-        .number-pad-header { text-align: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 15px; }
-        .number-pad-display { text-align: center; font-size: 32px; font-weight: bold; color: #3e2723; padding: 15px; background: #fafafa; border-radius: 12px; margin-bottom: 20px; min-height: 70px; display: flex; align-items: center; justify-content: center; }
-        .number-pad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .number-pad-btn { height: 60px; background: #fff; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 24px; font-weight: bold; color: #3e2723; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
-        .number-pad-btn:active { background: #f5f5f5; transform: scale(0.95); }
-        .number-pad-btn.delete { background: #ffebee; color: #c62828; border-color: #ffcdd2; }
-        .number-pad-btn.clear { background: #fff3e0; color: #ef6c00; border-color: #ffcc80; }
-        .number-pad-btn.confirm { background: var(--song-wood); color: white; border: none; font-size: 18px; }
-        .number-pad-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
-        .number-pad-close { height: 50px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; font-weight: bold; color: #757575; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        .med-chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #8d6e63; color: #5d4037; background: #fff; cursor: pointer; white-space: nowrap; margin-right: 6px; margin-bottom: 6px; display: inline-block; -webkit-user-select: none; }
-        .med-chip.active { background: #5d4037; color: white; }
-        .tuchan-chip { padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; border: 1px solid #e0e0e0; color: #666; background: #fafafa; cursor: pointer; white-space: nowrap; margin-right: 6px; margin-bottom: 6px; display: inline-block; -webkit-user-select: none; }
-        .tuchan-chip.active { background: var(--song-wood); color: white; border-color: var(--song-wood); }
-        .tuchan-section { padding: 12px; border-radius: 12px; margin-bottom: 10px; background: #fff; border: 1px solid #eee; }
-        .tuchan-title { font-size: 13px; font-weight: 700; color: #5d4037; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; }
-        .tuchan-title span { background: var(--song-wood); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 6px; }
-
-        .discount-btn { min-width: 70px; padding: 8px 12px; background: #fff9c4; color: #5d4037; border: 2px solid #ffd54f; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .discount-btn:hover { background: #fff59d; transform: translateY(-1px); }
-        
-        .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-        .backup-card { background: white; border: 2px solid #d7ccc8; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
-        .backup-card:hover { transform: translateY(-2px); border-color: var(--song-wood); box-shadow: 0 5px 15px rgba(93, 64, 55, 0.15); }
-        .backup-icon { font-size: 32px; margin-bottom: 10px; }
-        .backup-title { font-weight: bold; color: var(--song-wood); margin-bottom: 5px; }
-        .backup-desc { font-size: 11px; color: #8d6e63; }
-        
-        .progress-container { width: 100%; background-color: #f0f0f0; border-radius: 10px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { height: 20px; background-color: #4caf50; width: 0%; border-radius: 10px; transition: width 0.3s ease; text-align: center; color: white; font-size: 12px; line-height: 20px; font-weight: bold; }
-
-        /* NEW STYLES FOR PROCEDURE & MEDICINE DAYS */
-        .days-input-container { display: flex; align-items: center; gap: 5px; }
-        .days-input { width: 60px; text-align: center; padding: 5px; border: 1px solid #d7ccc8; border-radius: 6px; }
-        
-        .time-btn { 
-            padding: 8px 12px; border: 1px solid #d7ccc8; border-radius: 8px; 
-            font-size: 14px; font-weight: 600; background: #fff; cursor: pointer;
-            transition: all 0.2s;
-            min-width: 60px;
-            text-align: center;
-        }
-        .time-btn.active { background: #5d4037; color: white; border-color: #5d4037; }
-        
-        .procedure-item { 
-            background: #fff; border: 1px solid #eee; border-radius: 12px; 
-            padding: 12px; margin-bottom: 10px;
-        }
-        
-        /* PRINT MODAL STYLES */
-        .print-option-btn { 
-            padding: 12px; border: 2px solid #d7ccc8; border-radius: 12px; 
-            background: #fff; cursor: pointer; transition: all 0.2s;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100px;
-        }
-        .print-option-btn:hover { border-color: #5d4037; transform: translateY(-2px); }
-        .print-option-btn.active { border-color: #5d4037; background: #f5f0ed; }
-        
-        @media print { 
-            body * { visibility: hidden; } 
-            #printArea, #printArea * { visibility: visible; } 
-            #printArea { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100%; 
-                padding: 20px; 
-                font-size: 12pt;
-                background: white;
-            } 
-        }
-
-        /* FIX FOR IPAD INPUTS */
-        .ipad-input-fix {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-            cursor: text;
-            -webkit-tap-highlight-color: rgba(0,0,0,0);
-        }
-        
-        /* DISEASE MODAL STYLES */
-        .disease-modal-container {
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        
-        .disease-ingredient-row {
+        /* Nút xóa (X) nằm góc trên phải */
+        .med-delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
             display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
             align-items: center;
-        }
-        
-        .disease-ingredient-row input {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #d7ccc8;
-            border-radius: 6px;
-            min-width: 0;
-        }
-        
-        /* NEW STYLES FOR SETTINGS SCROLLABLE TABLES */
-        .settings-scrollable-container {
-            overflow-x: auto;
-            max-width: 100%;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-        }
-        
-        .settings-medicine-table {
-            min-width: 700px;
-            border-collapse: collapse;
-            width: 100%;
-        }
-        
-        .settings-medicine-table th,
-        .settings-medicine-table td {
-            padding: 8px 12px;
-            border: 1px solid #e0e0e0;
-            text-align: left;
-            font-size: 14px;
-        }
-        
-        .settings-medicine-table th {
-            background-color: #f5f5f5;
+            justify-content: center;
+            color: #ef5350;
+            font-size: 20px;
             font-weight: bold;
-            color: #5d4037;
+            background: #ffebee;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* Nhóm Input (Label + Ô nhập) */
+        .med-input-group {
+            display: flex;
+            flex-direction: column;
         }
         
-        .settings-medicine-table input {
+        .med-input-group label {
+            font-size: 10px;
+            color: #8d6e63;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            white-space: nowrap; /* Không xuống dòng label */
+        }
+
+        /* Ô nhập liệu SỐ to, dễ bấm */
+        .med-input-large {
+            height: 48px; /* Kích thước lớn chuẩn ngón tay */
             width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #d7ccc8;
-            border-radius: 4px;
-            font-size: 14px;
-            min-width: 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #3e2723;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background-color: #fafafa;
+            outline: none;
         }
         
-        .settings-medicine-table .small-input {
-            width: 80px;
-            min-width: 80px;
+        .med-input-large:focus {
+            border-color: #8d6e63;
+            background-color: #fff;
+            box-shadow: 0 0 0 2px rgba(141, 110, 99, 0.2);
         }
-        
-        /* NEW STYLES FOR VISIT MEDICINE CONTROLS */
-        .visit-medicine-container {
-            overflow-x: auto;
-            max-width: 100%;
-            padding-bottom: 10px;
+
+        /* Nút giảm giá (dành riêng cho thủ thuật) */
+        .med-discount-btn {
+            height: 48px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1976d2;
+            border: 1px dashed #90caf9;
+            border-radius: 10px;
+            background: #e3f2fd;
         }
-        
-        .visit-medicine-row {
+
+        /* --- THANH TRƯỢT NGANG CHO CÁC BUỔI (SÁNG/TRƯA/CHIỀU/TỐI) --- */
+        .med-usage-row {
+            grid-column: 1 / -1; /* Chiếm hết chiều ngang */
             display: flex;
             gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #eeeeee;
+            
+            /* Kích hoạt trượt ngang */
+            overflow-x: auto; 
+            white-space: nowrap;
+            padding-bottom: 5px; /* Chừa chỗ cho thanh scroll nếu có */
+            -webkit-overflow-scrolling: touch; /* Trượt mượt trên iOS */
+            scrollbar-width: none; /* Ẩn thanh scroll trên Firefox */
+        }
+        
+        /* Ẩn thanh scroll trên Chrome/Safari/Edge */
+        .med-usage-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Nút chọn buổi (Viên thuốc) */
+        .time-btn-large {
+            flex: 0 0 auto; /* Không cho phép co lại, giữ nguyên kích thước */
+            min-width: 70px; /* Đủ rộng cho chữ */
+            padding: 8px 16px;
+            text-align: center;
+            border-radius: 25px; /* Bo tròn như viên thuốc */
+            border: 1px solid #d7ccc8;
+            background: #fff;
+            color: #5d4037;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .time-btn-large.active {
+            background: #5d4037;
+            color: white;
+            border-color: #5d4037;
+            box-shadow: 0 3px 6px rgba(93, 64, 55, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* CSS MỚI CHO PHẦN TỔNG GIÁ VÀ GHI CHÚ */
+        .rx-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed #d7ccc8;
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Ghi chú rộng gấp đôi giá */
+            gap: 10px;
+        }
+        
+        .rx-header-controls {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            background: #fdfbf7;
             padding: 10px;
-            background: #f9f9f9;
-            border-radius: 8px;
-            min-width: 800px;
+            border-radius: 12px;
+            border: 1px solid #efebe9;
         }
-        
-        .visit-medicine-row input {
-            padding: 10px 12px;
+
+        /* CSS CHO BỘ LỌC THÁNG (MONTH FILTER CHIPS) */
+        .month-chip {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            color: #5d4037;
+            background: #efebe9;
             border: 1px solid #d7ccc8;
-            border-radius: 6px;
-            font-size: 14px;
-            min-width: 0;
+            transition: all 0.2s;
+            cursor: pointer;
         }
-        
-        .visit-medicine-row .med-name {
-            flex: 2;
-            min-width: 150px;
+
+        .month-chip.active {
+            background: #5d4037;
+            color: white;
+            border-color: #3e2723;
+            box-shadow: 0 2px 5px rgba(93, 64, 55, 0.3);
         }
-        
-        .visit-medicine-row .med-qty {
-            width: 100px;
-            min-width: 100px;
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        
-        .visit-medicine-row .med-days {
-            width: 90px;
-            min-width: 90px;
-        }
-        
-        .visit-medicine-row .med-price {
-            width: 120px;
-            min-width: 120px;
-        }
-        
-        .visit-medicine-row .med-time {
-            width: 180px;
-            min-width: 180px;
-        }
-        
-        .visit-medicine-row .med-actions {
-            width: 60px;
-            min-width: 60px;
-        }
-        
-        .visit-time-buttons {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .visit-time-buttons .time-btn {
-            padding: 8px 10px;
-            font-size: 13px;
-            min-width: 50px;
-            flex: 1;
-        }
-        
-        /* SETTINGS TAB MED CONTENT */
-        .tab-med-content {
-            max-width: 100%;
-            overflow: hidden;
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
 <body>
 
     <div class="max-w-3xl mx-auto">
+        <!-- HEADER -->
         <div id="mainHeader">
             <div id="headerOverlay"></div>
             <div id="mainHeaderCard" class="header-card">
@@ -411,15 +235,17 @@
                         <p id="displayDoctor" class="serif italic text-sm text-[#5d4037]">Đông Y</p>
                     </div>
                 </div>
+                <!-- CỐ ĐỊNH KÍCH THƯỚC Ô LỢI NHUẬN -->
                 <div class="text-right cursor-pointer" onclick="window.handleProfitBoxClick()">
                     <p id="monthLabel" class="text-[9px] font-bold uppercase text-[#a1887f] mb-1">THÁNG</p>
-                    <div class="bg-[#fafafa] border border-[#eee] px-3 py-1 rounded-lg">
-                        <div id="profitLabel" class="font-mono font-bold text-[#3e2723] text-lg">******</div>
+                    <div class="bg-[#fafafa] border border-[#eee] px-3 py-1 rounded-lg min-w-[140px] text-center shadow-sm">
+                        <div id="profitLabel" class="font-mono font-bold text-[#3e2723] text-lg truncate">******</div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- MAIN MENU -->
         <div id="menuContainer" class="px-5 mt-6 pb-20">
             <div class="grid grid-cols-5 gap-3 mb-6">
                 <button type="button" onclick="window.openPatientModal()" class="col-span-2 btn-glass py-4 uppercase text-xs text-[#3e2723]">+ Bệnh nhân</button>
@@ -427,15 +253,22 @@
                 <button type="button" onclick="window.openSettings()" class="btn-glass text-xl text-[#5d4037]">⚙️</button>
             </div>
             
-            <div class="relative mb-4">
+            <div class="relative mb-3">
                 <input type="text" id="search" onkeyup="window.debouncedRender()" placeholder="🔍 Tìm tên hoặc số điện thoại..." class="w-full bg-white border border-[#e0e0e0] rounded-xl py-3 px-4 shadow-sm text-[#3e2723] outline-none focus:border-[#8d6e63] ipad-input-fix">
             </div>
+
+            <!-- KẾT CẤU MỚI: BỘ LỌC THÁNG (Horizontal Scroll) -->
+            <div id="monthFilterArea" class="flex gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar pl-1">
+                <!-- Javascript sẽ điền các nút tháng vào đây -->
+                <!-- Ví dụ: <button class="month-chip active">T1/2026</button> -->
+            </div>
             
+            <!-- DANH SÁCH BỆNH NHÂN -->
             <div id="list" class="space-y-3 pb-24"></div>
         </div>
     </div>
 
-    <!-- VISIT MODAL -->
+    <!-- VISIT MODAL (KHÁM BỆNH) -->
     <div id="vModal" class="modal">
         <div class="modal-box">
             <div class="modal-header">
@@ -446,13 +279,14 @@
             <div class="tabs">
                 <button class="tab-btn active" id="tab1" onclick="window.goToStep(1)">1. Chẩn đoán</button>
                 <button class="tab-btn" id="tab2" onclick="window.goToStep(2)">2. Tứ chẩn</button>
-                <button class="tab-btn" id="tab3" onclick="window.goToStep(3)">3. Thủ thuật & Toa thuốc</button>
+                <button class="tab-btn" id="tab3" onclick="window.goToStep(3)">3. Điều trị</button>
                 <button class="tab-btn" id="tab4" onclick="window.goToStep(4)">4. Kết thúc</button>
             </div>
             
             <div class="modal-body" id="stepContainer">
                 <input type="hidden" id="vPid"><input type="hidden" id="vVisitId">
                 
+                <!-- STEP 1: CHẨN ĐOÁN -->
                 <div id="step1" class="step-content active space-y-5">
                     <div><label class="song-label">Ngày khám</label><input type="date" id="vDate" class="song-input ipad-input-fix"></div>
                     <div><label class="song-label">Chẩn đoán</label><select id="vDiseaseSelect" onchange="window.loadDiseaseSuggestions()" class="song-input mb-2 font-bold text-[#3e2723]"><option value="">-- Chọn bệnh mẫu --</option></select><input type="text" id="vDiseaseInput" placeholder="Chẩn đoán cụ thể..." class="song-input ipad-input-fix"></div>
@@ -487,6 +321,7 @@
                     <div class="flex justify-between text-sm font-bold text-[#3e2723] mt-1"><span id="displayHeightWeight">165cm - 60kg</span><span id="displayBMI">BMI: 22.0</span></div>
                 </div>
 
+                <!-- STEP 2: TỨ CHẨN -->
                 <div id="step2" class="step-content hidden space-y-4">
                     <div class="tuchan-section"><div class="tuchan-title"><span>1</span> VỌNG (Nhìn)</div><div id="tuchanVongButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVongExtra" class="song-input border-0 border-b rounded-none px-0 ipad-input-fix" placeholder="Ghi chú thêm..."></div>
                     <div class="tuchan-section"><div class="tuchan-title"><span>2</span> VĂN (Nghe, Ngửi)</div><div id="tuchanVanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vVanExtra" class="song-input border-0 border-b rounded-none px-0 ipad-input-fix" placeholder="Ghi chú thêm..."></div>
@@ -496,39 +331,89 @@
                     <div class="tuchan-section border-2 border-red-100 bg-red-50"><div class="tuchan-title"><span>6</span> MẠCH</div><div id="tuchanMachchanButtons" class="flex flex-wrap mb-2"></div><input type="text" id="vMachChanExtra" class="song-input bg-transparent border-0 border-b border-red-200 rounded-none px-0 ipad-input-fix" placeholder="Mô tả mạch..."></div>
                 </div>
 
+                <!-- STEP 3: ĐIỀU TRỊ -->
                 <div id="step3" class="step-content hidden space-y-6">
                     <!-- PROCEDURES SECTION -->
                     <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm">
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="font-bold text-[#5d4037] serif text-lg">Thủ thuật</label>
-                            <button onclick="window.addProcedureRow()" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded-full">+ Thủ thuật</button>
+                        <div class="mb-3">
+                            <label class="font-bold text-[#5d4037] serif text-lg block mb-2">Chỉ định Thủ thuật</label>
+                            
+                            <!-- Khu vực hiển thị các nút chọn thủ thuật -->
+                            <div class="bg-[#fdfbf7] p-3 rounded-lg border border-dashed border-[#d7ccc8] mb-3">
+                                <p class="text-[10px] uppercase font-bold text-[#8d6e63] mb-2">Chọn thủ thuật có sẵn:</p>
+                                <div id="vProcOptionsArea" class="flex flex-wrap gap-2">
+                                    <span class="text-xs text-gray-400 italic">Chưa có thủ thuật nào trong cài đặt.</span>
+                                </div>
+                            </div>
                         </div>
-                        <div id="vProcList" class="space-y-3"></div>
+
+                        <!-- Danh sách thủ thuật đã chọn -->
+                        <div class="border-t border-gray-100 pt-2">
+                            <label class="text-xs font-bold text-[#3e2723] uppercase mb-2 block">Thủ thuật đã kê:</label>
+                            <div id="vProcList" class="space-y-3"></div>
+                        </div>
                     </div>
                     
                     <!-- EASTERN MEDICINE SECTION -->
                     <div class="bg-white p-4 border border-[#d7ccc8] rounded-xl shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="font-bold text-[#5d4037] serif text-lg">Đông Y (Gam)</label>
-                            <button onclick="window.addMedRow('east')" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded-full">+ Vị thuốc</button>
+                        <!-- Header with Title and Global Days -->
+                        <div class="rx-header-controls">
+                            <div>
+                                <label class="font-bold text-[#5d4037] serif text-lg block">Đông Y (Gam)</label>
+                                <button onclick="window.addMedRow('east')" class="text-[10px] bg-[#5d4037] text-white px-3 py-1 rounded-full mt-1">+ Vị thuốc</button>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <label class="text-[10px] font-bold text-[#8d6e63] uppercase">Số thang</label>
+                                <input type="number" id="vEastDays" class="med-input-large" style="width: 80px; height: 40px; font-size: 16px;" value="1" onclick="window.openNumberPad('vEastDays', 'Số thang thuốc Đông Y', '1-100', 1)" readonly>
+                            </div>
                         </div>
+
                         <div id="eastPresetsArea" class="mb-3 hidden p-2 bg-[#fdfbf7] rounded border border-dashed border-[#d7ccc8]">
                             <p class="text-[10px] uppercase font-bold text-[#8d6e63] mb-1">Bài thuốc mẫu:</p>
                             <div id="eastPresetButtons" class="whitespace-nowrap overflow-x-auto pb-1"></div>
                         </div>
-                        <div class="visit-medicine-container">
-                            <div id="vMedListEast" class="space-y-2"></div>
+                        
+                        <div id="vMedListEast" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+
+                        <!-- Footer: Note & Manual Price Override -->
+                        <div class="rx-footer">
+                            <div class="med-input-group">
+                                <label>Ghi chú / Cách dùng</label>
+                                <textarea id="vEastNote" rows="1" class="w-full text-sm border-b border-gray-300 py-2 outline-none text-[#5d4037] bg-transparent ipad-input-fix" placeholder="Cách sắc, uống..."></textarea>
+                            </div>
+                            <div class="med-input-group">
+                                <label>Giá trọn gói</label>
+                                <input type="number" id="vEastManualPrice" class="med-input-large" style="height: 40px; font-size: 14px;" placeholder="Tự tính..." onchange="window.calcTotal()">
+                            </div>
                         </div>
                     </div>
                     
                     <!-- WESTERN MEDICINE SECTION -->
                     <div class="bg-white p-4 border border-blue-200 rounded-xl shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="font-bold text-blue-800 serif text-lg">Tây Y (Viên)</label>
-                            <button onclick="window.addMedRow('west')" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full">+ Thuốc</button>
+                        <!-- Header with Title and Global Days -->
+                        <div class="rx-header-controls bg-blue-50 border-blue-100">
+                            <div>
+                                <label class="font-bold text-blue-800 serif text-lg block">Tây Y (Viên)</label>
+                                <button onclick="window.addMedRow('west')" class="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full mt-1">+ Thuốc</button>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <label class="text-[10px] font-bold text-blue-800 uppercase">Số ngày</label>
+                                <input type="number" id="vWestDays" class="med-input-large border-blue-200 text-blue-800" style="width: 80px; height: 40px; font-size: 16px;" value="1" onclick="window.openNumberPad('vWestDays', 'Số ngày thuốc Tây Y', '1-100', 1)" readonly>
+                            </div>
                         </div>
-                        <div class="visit-medicine-container">
-                            <div id="vMedListWest" class="space-y-2"></div>
+
+                        <div id="vMedListWest" class="space-y-2"></div>
+
+                        <!-- Footer: Note & Manual Price Override -->
+                        <div class="rx-footer border-blue-200">
+                            <div class="med-input-group">
+                                <label class="text-blue-800">Lời dặn / Kiêng kỵ</label>
+                                <textarea id="vWestNote" rows="1" class="w-full text-sm border-b border-blue-200 py-2 outline-none text-blue-800 bg-transparent ipad-input-fix" placeholder="Uống sau ăn..."></textarea>
+                            </div>
+                            <div class="med-input-group">
+                                <label class="text-blue-800">Giá trọn gói</label>
+                                <input type="number" id="vWestManualPrice" class="med-input-large border-blue-200 text-blue-800" style="height: 40px; font-size: 14px;" placeholder="Tự tính..." onchange="window.calcTotal()">
+                            </div>
                         </div>
                     </div>
                     
@@ -557,6 +442,7 @@
                     </div>
                 </div>
 
+                <!-- STEP 4: THANH TOÁN -->
                 <div id="step4" class="step-content hidden space-y-6 text-center">
                     <div class="bg-[#fffcf7] p-8 rounded-2xl shadow-inner border border-[#d7ccc8]">
                         <h3 class="font-black text-4xl text-[#3e2723] mb-1" id="finalTotal">0đ</h3>
@@ -651,9 +537,9 @@
     <!-- NUMBER PAD MODAL -->
     <div id="numberPadModal" class="number-pad-modal"><div class="number-pad-container"><div class="number-pad-header"><h3 id="numberPadTitle" class="font-bold text-lg text-[#3e2723]">Nhập số</h3><p id="numberPadRange" class="text-xs text-gray-500"></p></div><div class="number-pad-display" id="numberPadDisplay">0</div><div class="number-pad-grid"><button class="number-pad-btn" onclick="window.addNumberPadDigit('1')">1</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('2')">2</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('3')">3</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('4')">4</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('5')">5</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('6')">6</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('7')">7</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('8')">8</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('9')">9</button><button class="number-pad-btn clear" onclick="window.clearNumberPad()">C</button><button class="number-pad-btn" onclick="window.addNumberPadDigit('0')">0</button><button class="number-pad-btn delete" onclick="window.deleteNumberPadDigit()">⌫</button></div><div class="number-pad-footer"><button class="number-pad-close" onclick="window.closeNumberPad()">Đóng</button><button class="number-pad-btn confirm" onclick="window.confirmNumberPad()">XONG</button></div></div></div>
 
-    <!-- DISEASE MODAL -->
+    <!-- DISEASE MODAL (LÀM LẠI CHO TO & ĐẸP) -->
     <div id="diseaseModal" class="modal">
-        <div class="modal-box max-w-2xl">
+        <div class="modal-box max-w-2xl max-h-[85vh] overflow-y-auto">
             <div class="modal-header">
                 <h2 class="font-bold text-xl text-[#3e2723]" id="diseaseModalTitle">Thêm Bệnh Mới</h2>
                 <button onclick="window.closeModals()" class="text-3xl text-gray-300 px-2">&times;</button>
@@ -666,56 +552,30 @@
                         <input type="text" id="diseaseName" class="song-input ipad-input-fix" placeholder="Nhập tên bệnh">
                     </div>
                     <div>
-                        <label class="song-label">Triệu chứng gợi ý (phân cách bằng dấu phẩy)</label>
+                        <label class="song-label">Triệu chứng gợi ý</label>
                         <textarea id="diseaseSymptoms" class="song-input ipad-input-fix" rows="2" placeholder="Ví dụ: sốt, ho, đau đầu"></textarea>
                     </div>
                     
-                    <div class="border border-[#d7ccc8] rounded-lg p-4">
+                    <div class="border border-[#d7ccc8] rounded-lg p-4 bg-gray-50">
                         <h3 class="font-bold text-[#5d4037] mb-3">Bài thuốc Đông Y mẫu</h3>
                         <div>
                             <label class="song-label">Tên bài thuốc</label>
-                            <input type="text" id="diseaseEastName" class="song-input ipad-input-fix mb-3" placeholder="Tên bài thuốc, ví dụ: Bài thuốc cảm mạo">
+                            <input type="text" id="diseaseEastName" class="song-input ipad-input-fix mb-3" placeholder="Tên bài thuốc...">
                         </div>
                         
-                        <div class="settings-scrollable-container">
-                            <table class="settings-medicine-table">
-                                <thead>
-                                    <tr>
-                                        <th>Tên vị thuốc</th>
-                                        <th class="small-input">Số gam</th>
-                                        <th class="small-input">Số ngày</th>
-                                        <th class="small-input">Đơn giá</th>
-                                        <th>Hành động</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="eastIngredientsContainer">
-                                    <!-- Ingredients will be added here dynamically -->
-                                </tbody>
-                            </table>
+                        <div id="eastIngredientsContainer" class="space-y-2 mb-3">
+                            <!-- Ingredients will be added here dynamically -->
                         </div>
                         
-                        <button onclick="window.addEastIngredient()" class="btn-primary text-sm px-4 py-2">+ Thêm vị thuốc</button>
+                        <button onclick="window.addEastIngredient()" class="btn-primary text-sm px-4 py-2 w-full">+ Thêm vị thuốc</button>
                     </div>
                     
-                    <div class="border border-blue-200 rounded-lg p-4">
+                    <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
                         <h3 class="font-bold text-blue-800 mb-3">Thuốc Tây Y mẫu</h3>
-                        <div class="settings-scrollable-container">
-                            <table class="settings-medicine-table">
-                                <thead>
-                                    <tr>
-                                        <th>Tên thuốc</th>
-                                        <th class="small-input">Số viên/ngày</th>
-                                        <th class="small-input">Số ngày</th>
-                                        <th class="small-input">Đơn giá</th>
-                                        <th>Hành động</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="westMedicinesContainer">
-                                    <!-- Medicines will be added here dynamically -->
-                                </tbody>
-                            </table>
+                        <div id="westMedicinesContainer" class="space-y-2 mb-3">
+                            <!-- Medicines will be added here dynamically -->
                         </div>
-                        <button onclick="window.addWestMedicine()" class="btn-primary text-sm px-4 py-2 bg-blue-600">+ Thêm thuốc Tây Y</button>
+                        <button onclick="window.addWestMedicine()" class="btn-primary text-sm px-4 py-2 w-full bg-blue-600">+ Thêm thuốc Tây Y</button>
                     </div>
                 </div>
             </div>
@@ -773,7 +633,8 @@
                     </div>
                 </div>
 
-                <div id="tabMed" class="settings-panel space-y-6 hidden tab-med-content">
+                <!-- CẬP NHẬT PHẦN CẤU HÌNH TỨ CHẨN MỚI -->
+                <div id="tabMed" class="settings-panel space-y-6 hidden">
                     <div>
                         <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Danh mục Bệnh</h3>
                         <div id="diseaseList" class="space-y-2 mb-3"></div>
@@ -788,18 +649,74 @@
                             <button onclick="window.addProc()" class="btn-primary px-4 text-sm">Thêm</button>
                         </div>
                     </div>
+                    
+                    <!-- KHU VỰC CẤU HÌNH TỨ CHẨN ĐÃ ĐƯỢC CẬP NHẬT ID ĐỂ KHỚP SCRIPT -->
                     <div>
-                        <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Tứ chẩn</h3>
+                        <h3 class="font-bold text-[#3e2723] mb-2 uppercase border-b pb-1 text-sm">Cấu hình Tứ chẩn</h3>
                         <div id="tuChanConfigArea" class="space-y-4">
-                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vọng</h4><div class="flex flex-wrap gap-1 mb-2" id="configVongChips"></div><input type="text" id="newVongChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('vong')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
-                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Văn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanChips"></div><input type="text" id="newVanChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('van')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
-                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Vấn</h4><div class="flex flex-wrap gap-1 mb-2" id="configVanhoiChips"></div><input type="text" id="newVanhoiChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('vanhoi')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
-                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiết</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietChips"></div><input type="text" id="newThietChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('thiet')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
-                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Thiệt</h4><div class="flex flex-wrap gap-1 mb-2" id="configThietchanChips"></div><input type="text" id="newThietchanChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('thietchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
-                            <div class="p-3 border rounded"><h4 class="font-bold text-sm mb-2 text-[#5d4037]">Mạch</h4><div class="flex flex-wrap gap-1 mb-2" id="configMachchanChips"></div><input type="text" id="newMachchanChip" placeholder="Thêm..." class="song-input text-sm ipad-input-fix"><button onclick="window.addTuChanChip('machchan')" class="btn-primary text-xs px-3 py-1 mt-1">+ Thêm</button></div>
+                            <!-- VỌNG -->
+                            <div class="p-3 border rounded bg-white">
+                                <h4 class="font-bold text-sm mb-2 text-[#5d4037] uppercase">Vọng (Nhìn)</h4>
+                                <div id="setting_list_vong" class="mb-3 space-y-1 max-h-40 overflow-y-auto"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="setting_new_vong" placeholder="Thêm triệu chứng..." class="song-input text-sm flex-1 ipad-input-fix">
+                                    <button onclick="window.addTuChanItem('vong')" class="btn-primary text-xs px-3 py-1 bg-[#5d4037]">+ Thêm</button>
+                                </div>
+                            </div>
+
+                            <!-- VĂN -->
+                            <div class="p-3 border rounded bg-white">
+                                <h4 class="font-bold text-sm mb-2 text-[#5d4037] uppercase">Văn (Nghe/Ngửi)</h4>
+                                <div id="setting_list_van" class="mb-3 space-y-1 max-h-40 overflow-y-auto"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="setting_new_van" placeholder="Thêm triệu chứng..." class="song-input text-sm flex-1 ipad-input-fix">
+                                    <button onclick="window.addTuChanItem('van')" class="btn-primary text-xs px-3 py-1 bg-[#5d4037]">+ Thêm</button>
+                                </div>
+                            </div>
+
+                            <!-- VẤN -->
+                            <div class="p-3 border rounded bg-white">
+                                <h4 class="font-bold text-sm mb-2 text-[#5d4037] uppercase">Vấn (Hỏi)</h4>
+                                <div id="setting_list_vanhoi" class="mb-3 space-y-1 max-h-40 overflow-y-auto"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="setting_new_vanhoi" placeholder="Thêm triệu chứng..." class="song-input text-sm flex-1 ipad-input-fix">
+                                    <button onclick="window.addTuChanItem('vanhoi')" class="btn-primary text-xs px-3 py-1 bg-[#5d4037]">+ Thêm</button>
+                                </div>
+                            </div>
+
+                            <!-- THIẾT -->
+                            <div class="p-3 border rounded bg-white">
+                                <h4 class="font-bold text-sm mb-2 text-[#5d4037] uppercase">Thiết (Sờ nắn)</h4>
+                                <div id="setting_list_thiet" class="mb-3 space-y-1 max-h-40 overflow-y-auto"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="setting_new_thiet" placeholder="Thêm triệu chứng..." class="song-input text-sm flex-1 ipad-input-fix">
+                                    <button onclick="window.addTuChanItem('thiet')" class="btn-primary text-xs px-3 py-1 bg-[#5d4037]">+ Thêm</button>
+                                </div>
+                            </div>
+
+                            <!-- THIỆT -->
+                            <div class="p-3 border rounded bg-white">
+                                <h4 class="font-bold text-sm mb-2 text-[#5d4037] uppercase">Thiệt (Lưỡi)</h4>
+                                <div id="setting_list_thietchan" class="mb-3 space-y-1 max-h-40 overflow-y-auto"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="setting_new_thietchan" placeholder="Thêm triệu chứng..." class="song-input text-sm flex-1 ipad-input-fix">
+                                    <button onclick="window.addTuChanItem('thietchan')" class="btn-primary text-xs px-3 py-1 bg-[#5d4037]">+ Thêm</button>
+                                </div>
+                            </div>
+
+                            <!-- MẠCH -->
+                            <div class="p-3 border rounded bg-white">
+                                <h4 class="font-bold text-sm mb-2 text-[#5d4037] uppercase">Mạch chẩn</h4>
+                                <div id="setting_list_machchan" class="mb-3 space-y-1 max-h-40 overflow-y-auto"></div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="setting_new_machchan" placeholder="Thêm triệu chứng..." class="song-input text-sm flex-1 ipad-input-fix">
+                                    <button onclick="window.addTuChanItem('machchan')" class="btn-primary text-xs px-3 py-1 bg-[#5d4037]">+ Thêm</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div id="tabSec" class="settings-panel space-y-4 hidden"><section><label class="song-label">Mật khẩu admin</label><div class="flex gap-2"><input type="password" id="confPass" readonly class="song-input w-32 bg-[#f5f5f5] text-center"><button onclick="window.openKeypad('settings')" class="btn-primary px-4 text-xs">Đổi pass</button></div></section></div>
                 <div id="tabBackup" class="settings-panel space-y-4 hidden"><div class="text-center"><button onclick="window.openBackupModalDirect()" class="btn-primary px-6 py-3 text-lg">📂 Mở công cụ Sao lưu</button><p class="text-sm text-gray-500 mt-2">Xuất/nhập dữ liệu</p></div></div>
             </div>
@@ -807,1563 +724,65 @@
         </div>
     </div>
 
-    <!-- PRINT AREA -->
-    <div id="printArea" class="hidden">
-        <!-- EASTERN PRESCRIPTION -->
-        <div id="printEast" class="hidden print-section">
-            <div class="text-center border-b border-dashed border-black pb-2 mb-2">
-                <h2 class="text-base font-bold uppercase" id="prTitleEast">PHÒNG KHÁM YHCT</h2>
-                <p class="text-[10px]" id="prDocEast">BS. Đông Y</p>
-                <p class="text-xs font-bold mt-1">ĐƠN THUỐC ĐÔNG Y</p>
-                <p class="text-[10px]" id="prDateEast"></p>
+    <!-- ANALYTICS MODAL (CẬP NHẬT: THÊM CỘT TUỔI, TT VÀ SORT) -->
+    <div id="analyticsModal" class="modal">
+        <div class="modal-box max-w-5xl">
+            <div class="modal-header">
+                <h2 class="font-bold text-xl uppercase">Thống Kê & Báo Cáo</h2>
+                <button onclick="window.closeModals()" class="text-2xl">&times;</button>
             </div>
-            <div class="text-[11px] mb-2">
-                <p><b>Bệnh nhân:</b> <span id="prNameEast"></span> <span id="prYearEast"></span></p>
-                <p><b>Chẩn đoán:</b> <span id="prDisEast"></span></p>
-                <p><b>Triệu chứng:</b> <span id="prSymEast"></span></p>
-                <p><b>Số ngày dùng:</b> <span id="prDaysEast"></span> ngày</p>
-                <p><b>Cách dùng:</b> <span id="prUsageEast"></span></p>
-            </div>
-            <table class="w-full text-[11px] border-collapse mb-2">
-                <thead><tr class="border-b border-black"><th class="text-left">Vị thuốc</th><th class="text-right">Số gam</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
-                <tbody id="prTableEast"></tbody>
-            </table>
-            <div class="text-right text-xs mt-3">
-                <p><b>Tổng tiền thuốc Đông Y:</b> <span id="prTotalEast">0đ</span></p>
-            </div>
-            <div class="text-center text-[10px] italic mt-6">
-                <p>Người bệnh dùng thuốc theo chỉ dẫn, tái khám khi hết thuốc.</p>
-                <p class="mt-2">Chúc quý khách mau lành bệnh!</p>
-            </div>
-        </div>
+            <div class="modal-body">
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <!-- Time Filter -->
+                    <select id="anaTimeFilter" onchange="window.renderAnalytics()" class="song-input w-32">
+                        <option value="today">Hôm nay</option>
+                        <option value="month" selected>Tháng này</option>
+                        <option value="all">Tất cả</option>
+                    </select>
+                    
+                    <!-- NEW SORT FILTER -->
+                    <select id="anaSortBy" onchange="window.renderAnalytics()" class="song-input w-40">
+                        <option value="date_desc">📅 Mới nhất</option>
+                        <option value="name_asc">🔤 Tên A-Z</option>
+                        <option value="age_asc">👶 Tuổi (Tăng)</option>
+                        <option value="visits_desc">🔄 Số lần khám</option>
+                        <option value="total_desc">💰 Tổng chi tiêu</option>
+                    </select>
 
-        <!-- WESTERN PRESCRIPTION -->
-        <div id="printWest" class="hidden print-section">
-            <div class="text-center border-b border-dashed border-black pb-2 mb-2">
-                <h2 class="text-base font-bold uppercase" id="prTitleWest">PHÒNG KHÁM YHCT</h2>
-                <p class="text-[10px]" id="prDocWest">BS. Đông Y</p>
-                <p class="text-xs font-bold mt-1">ĐƠN THUỐC TÂY Y</p>
-                <p class="text-[10px]" id="prDateWest"></p>
-            </div>
-            <div class="text-[11px] mb-2">
-                <p><b>Bệnh nhân:</b> <span id="prNameWest"></span> <span id="prYearWest"></span></p>
-                <p><b>Chẩn đoán:</b> <span id="prDisWest"></span></p>
-                <p><b>Số ngày dùng:</b> <span id="prDaysWest"></span> ngày</p>
-                <p><b>Cách dùng:</b> <span id="prUsageWest"></span></p>
-            </div>
-            <table class="w-full text-[11px] border-collapse mb-2">
-                <thead><tr class="border-b border-black"><th class="text-left">Thuốc</th><th class="text-right">Số viên/ngày</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
-                <tbody id="prTableWest"></tbody>
-            </table>
-            <div class="text-right text-xs mt-3">
-                <p><b>Tổng tiền thuốc Tây Y:</b> <span id="prTotalWest">0đ</span></p>
-            </div>
-            <div class="text-center text-[10px] italic mt-6">
-                <p>Uống thuốc đúng liều, đúng giờ theo chỉ định.</p>
-                <p class="mt-2">Chúc quý khách mau lành bệnh!</p>
-            </div>
-        </div>
-
-        <!-- COMBINED PRESCRIPTION -->
-        <div id="printBoth" class="hidden print-section">
-            <div class="text-center border-b border-dashed border-black pb-2 mb-2">
-                <h2 class="text-base font-bold uppercase" id="prTitleBoth">PHÒNG KHÁM YHCT</h2>
-                <p class="text-[10px]" id="prDocBoth">BS. Đông Y</p>
-                <p class="text-xs font-bold mt-1">ĐƠN THUỐC ĐÔNG - TÂY Y KẾT HỢP</p>
-                <p class="text-[10px]" id="prDateBoth"></p>
-            </div>
-            <div class="text-[11px] mb-2">
-                <p><b>Bệnh nhân:</b> <span id="prNameBoth"></span> <span id="prYearBoth"></span></p>
-                <p><b>Chẩn đoán:</b> <span id="prDisBoth"></span></p>
-                <p><b>Triệu chứng:</b> <span id="prSymBoth"></span></p>
-            </div>
-            
-            <div class="mb-4">
-                <h4 class="text-xs font-bold bg-gray-100 p-1">1. THUỐC ĐÔNG Y</h4>
-                <table class="w-full text-[10px] border-collapse">
-                    <thead><tr class="border-b border-gray-300"><th class="text-left">Vị thuốc</th><th class="text-right">Số gam</th><th class="text-right">Số ngày</th><th class="text-right">Cách dùng</th></tr></thead>
-                    <tbody id="prTableBothEast"></tbody>
+                    <button onclick="window.exportToExcel()" class="btn-glass text-green-700 border-green-200 px-4">📊 Xuất Excel</button>
+                    <button onclick="window.openBackupModalDirect()" class="btn-primary px-4">💾 Sao lưu</button>
+                </div>
+                
+                <div class="h-64 mb-4 border rounded-xl p-2">
+                    <canvas id="analyticsChart"></canvas>
+                </div>
+                
+                <!-- TABLE WITH NEW COLUMNS -->
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                            <th class="p-2">Ngày</th>
+                            <th class="p-2">Tên</th>
+                            <th class="p-2">Tuổi</th> <!-- NEW -->
+                            <th class="p-2">Bệnh</th>
+                            <th class="p-2 text-center">TT</th> <!-- NEW: Paid status -->
+                            <th class="p-2 text-right">Thu</th>
+                            <th class="p-2 text-right">Lãi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="anaTableBody"></tbody>
                 </table>
-            </div>
-            
-            <div class="mb-4">
-                <h4 class="text-xs font-bold bg-gray-100 p-1">2. THUỐC TÂY Y</h4>
-                <table class="w-full text-[10px] border-collapse">
-                    <thead><tr class="border-b border-gray-300"><th class="text-left">Thuốc</th><th class="text-right">Số viên/ngày</th><th class="text-right">Số ngày</th><th class="text-right">Cách dùng</th></tr></thead>
-                    <tbody id="prTableBothWest"></tbody>
-                </table>
-            </div>
-            
-            <div class="text-center text-[10px] italic mt-6">
-                <p>Dùng thuốc theo chỉ dẫn, tái khám khi cần thiết.</p>
-                <p class="mt-2">Chúc quý khách sức khỏe!</p>
-            </div>
-        </div>
-
-        <!-- INVOICE -->
-        <div id="printInvoice" class="hidden print-section">
-            <div class="text-center border-b border-dashed border-black pb-3 mb-3">
-                <h2 class="text-lg font-bold uppercase" id="prTitleInvoice">PHÒNG KHÁM YHCT</h2>
-                <p class="text-[11px]" id="prDocInvoice">BS. Đông Y</p>
-                <p class="text-sm font-bold mt-1">HÓA ĐƠN THANH TOÁN</p>
-                <p class="text-[10px]" id="prDateInvoice"></p>
-            </div>
-            <div class="text-[12px] mb-3">
-                <p><b>Bệnh nhân:</b> <span id="prNameInvoice"></span> <span id="prYearInvoice"></span></p>
-                <p><b>Chẩn đoán:</b> <span id="prDisInvoice"></span></p>
-                <p><b>Ngày khám:</b> <span id="prVisitDateInvoice"></span></p>
-            </div>
-            
-            <table class="w-full text-[12px] border-collapse mb-3">
-                <thead>
-                    <tr class="border-b-2 border-black">
-                        <th class="text-left p-1">Nội dung</th>
-                        <th class="text-right p-1">Số lượng</th>
-                        <th class="text-right p-1">Đơn giá</th>
-                        <th class="text-right p-1">Thành tiền</th>
-                    </tr>
-                </thead>
-                <tbody id="prTableInvoice"></tbody>
-                <tfoot class="border-t-2 border-black">
-                    <tr><td colspan="3" class="text-right p-1 font-bold">Tổng tiền thủ thuật:</td><td class="text-right p-1 font-bold" id="prProcTotalInvoice">0đ</td></tr>
-                    <tr><td colspan="3" class="text-right p-1 font-bold">Tổng tiền thuốc Đông Y:</td><td class="text-right p-1 font-bold" id="prEastTotalInvoice">0đ</td></tr>
-                    <tr><td colspan="3" class="text-right p-1 font-bold">Tổng tiền thuốc Tây Y:</td><td class="text-right p-1 font-bold" id="prWestTotalInvoice">0đ</td></tr>
-                    <tr class="bg-gray-100"><td colspan="3" class="text-right p-1 font-bold text-lg">TỔNG CỘNG:</td><td class="text-right p-1 font-bold text-lg" id="prGrandTotalInvoice">0đ</td></tr>
-                    <tr><td colspan="3" class="text-right p-1 text-[11px]">Chiết khấu:</td><td class="text-right p-1 text-[11px]" id="prDiscInvoice">0%</td></tr>
-                    <tr><td colspan="3" class="text-right p-1 font-bold">THANH TOÁN:</td><td class="text-right p-1 font-bold text-red-600" id="prFinalInvoice">0đ</td></tr>
-                </tfoot>
-            </table>
-            
-            <div id="prQrContainerInvoice" class="text-center mt-4">
-                <p class="text-[10px] italic mb-1">Quét mã thanh toán:</p>
-                <img id="prQrInvoice" src="" class="w-32 h-32 object-contain inline-block border border-gray-300">
-            </div>
-            
-            <div class="text-center text-[11px] italic mt-6 pt-3 border-t border-dashed border-gray-400">
-                <p>Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!</p>
-                <p class="mt-1">Chúc quý khách luôn mạnh khỏe và hạnh phúc!</p>
             </div>
         </div>
     </div>
 
-    <!-- OTHER MODALS (Keypad, Analytics, History) -->
-    <div id="keypadModal" class="modal"><div class="modal-box w-80 h-auto"><div class="modal-body p-6 flex flex-col items-center"><h3 class="font-bold mb-4" id="keypadTitle">Mật khẩu</h3><div class="flex gap-2 mb-4" id="dotsArea"><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div><div class="w-3 h-3 rounded-full border border-gray-400 dot"></div></div><div class="grid grid-cols-3 gap-3 w-full"><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('1')">1</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('2')">2</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('3')">3</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('4')">4</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('5')">5</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('6')">6</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('7')">7</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('8')">8</button><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('9')">9</button><div></div><button class="h-14 bg-white border rounded text-xl font-bold" onclick="window.addDigit('0')">0</button><button class="h-14 text-red-500 font-bold" onclick="window.removeDigit()">⌫</button></div><button onclick="window.closeKeypad()" class="mt-4 text-gray-400 font-bold text-sm">Đóng</button></div></div></div>
-    <div id="analyticsModal" class="modal"><div class="modal-box max-w-5xl"><div class="modal-header"><h2 class="font-bold text-xl uppercase">Thống Kê & Báo Cáo</h2><button onclick="window.closeModals()" class="text-2xl">&times;</button></div><div class="modal-body"><div class="flex gap-3 mb-4"><select id="anaTimeFilter" onchange="window.renderAnalytics()" class="song-input w-40"><option value="today">Hôm nay</option><option value="month" selected>Tháng này</option><option value="all">Tất cả</option></select><button onclick="window.exportToExcel()" class="btn-glass text-green-700 border-green-200 px-4">📊 Xuất Excel</button><button onclick="window.openBackupModalDirect()" class="btn-primary px-4">💾 Sao lưu Dữ liệu</button></div><div class="h-64 mb-4 border rounded-xl p-2"><canvas id="analyticsChart"></canvas></div><table class="w-full text-sm"><thead><tr class="bg-gray-50 text-left"><th class="p-2">Ngày</th><th class="p-2">Tên</th><th class="p-2">Bệnh</th><th class="p-2 text-right">Thu</th><th class="p-2 text-right">Lãi</th></tr></thead><tbody id="anaTableBody"></tbody></table></div></div></div>
+    <!-- OTHER MODALS (History) -->
     <div id="hModal" class="modal"><div class="modal-box max-w-2xl"><div class="modal-header"><h2 class="font-bold text-xl serif">Lịch sử: <span id="hName"></span></h2><button onclick="window.closeModals()" class="text-3xl">&times;</button></div><div id="hContent" class="modal-body space-y-3"></div></div></div>
 
     <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="window.handleJSONFileSelect(event)">
 
-    <script>
-        // --- INIT ---
-        try { window.db = JSON.parse(localStorage.getItem('yhct_db_v49') || '[]'); } catch(e) { window.db = []; }
-        try { 
-            window.config = JSON.parse(localStorage.getItem('yhct_cfg_v49')) || {}; 
-            // Default config values
-            if(!window.config.clinicTitle) window.config.clinicTitle = 'Phòng Khám YHCT';
-            if(!window.config.diseases) window.config.diseases = [];
-            if(!window.config.procs) window.config.procs = [];
-            if(!window.config.tuChan) window.config.tuChan = {
-                vong: ['Sắc mặt hồng nhuận', 'Sắc mặt xanh tái', 'Sắc mặt vàng', 'Sắc mặt đỏ', 'Sắc mặt nhợt', 'Lưỡi to bệu', 'Rêu trắng', 'Rêu vàng'],
-                van: ['Tiếng nói nhỏ yếu', 'Tiếng nói lớn mạnh', 'Hơi thở hôi', 'Ho khan', 'Ho đờm'],
-                vanhoi: ['Ăn kém', 'Ăn ngon', 'Khát', 'Không khát', 'Đại tiện táo', 'Đại tiện lỏng', 'Ngủ kém', 'Đau đầu', 'Đau lưng'],
-                thiet: ['Da nóng', 'Da lạnh', 'Bụng mềm', 'Bụng cứng', 'Đau cự án', 'Đau thiện án'],
-                thietchan: ['Lưỡi đỏ', 'Lưỡi nhợt', 'Rêu mỏng', 'Rêu dày', 'Rêu nhớt'],
-                machchan: ['Phù', 'Trầm', 'Trì', 'Sác', 'Hoạt', 'Huyền', 'Tế', 'Nhược']
-            };
-            // New config for Header & QR
-            if(window.config.headerOverlayOpacity === undefined) window.config.headerOverlayOpacity = 0;
-            if(!window.config.headerBgImage) window.config.headerBgImage = null;
-            if(!window.config.qrCodeImage) window.config.qrCodeImage = null;
-
-            if(Array.isArray(window.config.diseases)) {
-                window.config.diseases.forEach(d => {
-                    if (d && !d.eastOptions) {
-                        d.eastOptions = [];
-                        if (d.rxEast && d.rxEast.length > 0) d.eastOptions.push({ name: "Bài thuốc cơ bản", ingredients: d.rxEast });
-                    }
-                });
-            }
-        } catch(e) { 
-            window.config = { clinicTitle: 'Phòng Khám YHCT', diseases: [], procs: [], tuChan: {} }; 
-        }
-
-        let currentVisit = { 
-            step: 1, 
-            rxEast: [], 
-            rxWest: [], 
-            procs: [], 
-            manualMedTotalEast: 0, 
-            manualMedTotalWest: 0,
-            tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} 
-        };
-        
-        let tempDiseaseId = null, tempFormulaIndex = null, chartInstance = null, tempPassInput = "", keypadMode = "unlock", currentFilteredVisits = [];
-        let numberPadValue = "", currentNumberInput = null;
-        let numberPadConfig = { min: 0, max: 9999, defaultValue: 0, isPhone: false };
-        let currentPrintType = 'invoice';
-
-        // Detect iPad for input handling
-        window.isIPad = function() {
-            return /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        };
-
-        window.onload = function() { 
-            window.render(); 
-            window.updateHeader(); 
-            window.initDefaultValues();
-            window.checkFirstTimeUse();
-            
-            // Fix for iPad inputs
-            if (window.isIPad()) {
-                document.querySelectorAll('.song-input, textarea').forEach(input => {
-                    input.classList.add('ipad-input-fix');
-                });
-            }
-        };
-        
-        window.saveDb = function() { try { localStorage.setItem('yhct_db_v49', JSON.stringify(window.db)); } catch(e) { alert("Bộ nhớ đầy!"); } }
-        window.saveConfig = function() { localStorage.setItem('yhct_cfg_v49', JSON.stringify(window.config)); window.updateHeader(); }
-        
-        // --- HEADER & QR FUNCTIONS ---
-        window.updateHeader = function() { 
-            document.getElementById('displayTitle').innerText = window.config.clinicTitle; 
-            document.getElementById('displayDoctor').innerText = window.config.doctorName ? window.config.doctorName : 'Đông Y'; 
-            window.updateProfitDisplay();
-            
-            // Apply Background & Overlay
-            const header = document.getElementById('mainHeader');
-            const overlay = document.getElementById('headerOverlay');
-            const card = document.getElementById('mainHeaderCard');
-            
-            if (window.config.headerBgImage) {
-                header.style.backgroundImage = `url(${window.config.headerBgImage})`;
-                overlay.style.opacity = (window.config.headerOverlayOpacity || 0) / 100;
-                card.classList.add('transparent-mode');
-            } else {
-                header.style.backgroundImage = 'none';
-                overlay.style.opacity = 0;
-                card.classList.remove('transparent-mode');
-            }
-        }
-
-        window.handleImageUpload = function(input, configKey, previewId, isHeader = false) {
-            const file = input.files[0];
-            if (!file) return;
-
-            if (file.size > 2000000) {
-                alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 2MB.");
-                input.value = "";
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                window.config[configKey] = e.target.result;
-                if (previewId) {
-                    document.getElementById(previewId).src = e.target.result;
-                }
-                if (isHeader) {
-                    window.updateHeader();
-                }
-                window.saveConfig();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        window.updateHeaderOverlay = function(value) {
-            window.config.headerOverlayOpacity = value;
-            document.getElementById('overlayValueDisplay').innerText = value + '%';
-            document.getElementById('headerOverlay').style.opacity = value / 100;
-        }
-        
-        window.clearHeaderImage = function() {
-            window.config.headerBgImage = null;
-            document.getElementById('headerBgInput').value = "";
-            window.updateHeader();
-            window.saveConfig();
-        }
-
-        window.clearQrImage = function() {
-            window.config.qrCodeImage = null;
-            document.getElementById('qrInput').value = "";
-            document.getElementById('previewQrSettings').src = "";
-            window.saveConfig();
-        }
-
-        // --- BACKUP & RESTORE ---
-        window.openBackupModalDirect = function() { 
-            window.closeModals();
-            setTimeout(() => {
-                document.getElementById('backupModal').classList.add('active');
-            }, 10);
-        };
-        
-        window.exportToJSON = function() {
-            const blob = new Blob([JSON.stringify({db: window.db, config: window.config}, null, 2)], { type: 'application/json' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_yhct_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        };
-        
-        window.importFromJSON = function() { document.getElementById('jsonFileInput').click(); };
-        
-        window.handleJSONFileSelect = function(e) {
-            const file = e.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    if (data.db && data.config) {
-                        if(confirm('Dữ liệu hiện tại sẽ bị ghi đè. Tiếp tục?')) {
-                            window.db = data.db; window.config = data.config;
-                            window.saveDb(); window.saveConfig();
-                            alert('Khôi phục thành công! Trang sẽ tải lại.');
-                            location.reload();
-                        }
-                    } else alert('File không hợp lệ');
-                } catch(err) { alert('Lỗi đọc file: ' + err.message); }
-            };
-            reader.readAsText(file); e.target.value = '';
-        };
-
-        // --- EXCEL ---
-        window.exportToExcel = function() {
-            if(!currentFilteredVisits.length) return alert("Không có dữ liệu");
-            const data = currentFilteredVisits.map((v, i) => ({
-                "STT": i+1, "Ngày": v.date, "Tên": v.pName, "Bệnh": v.disease,
-                "Thuốc Đông Y": v.rxEast?.map(m=>`${m.name}(${m.qty}g x ${m.days} ngày)`).join(', ')||'',
-                "Thuốc Tây Y": v.rxWest?.map(m=>`${m.name}(${m.qty}v x ${m.days} ngày)`).join(', ')||'',
-                "Thủ thuật": v.procs?.map(p=>`${p.name}(${p.days} ngày)`).join(', ')||'',
-                "Tổng thu": v.total, "Lãi": v.total-(v.cost||0)
-            }));
-            const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Báo cáo");
-            XLSX.writeFile(wb, `BaoCao_${new Date().toISOString().split('T')[0]}.xlsx`);
-        };
-        
-        window.exportFullDataExcel = function() {
-            const wb = XLSX.utils.book_new();
-            const pData = window.db.map((p,i)=>({"ID":p.id,"Tên":p.name,"SĐT":p.phone}));
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pData), "BenhNhan");
-            XLSX.writeFile(wb, `FullData_${new Date().toISOString().split('T')[0]}.xlsx`);
-        };
-
-        // --- FIRST TIME ---
-        window.checkFirstTimeUse = function() {
-            if (!localStorage.getItem('yhct_first_time')) {
-                window.createSampleData(); localStorage.setItem('yhct_first_time', 'false');
-            }
-        };
-        
-        window.createSampleData = function() {
-            if (window.config.diseases.length===0) window.config.diseases = [{name:"Cảm mạo",sym:"Sốt, sợ lạnh",rxWest:[],eastOptions:[]}];
-            if (window.config.procs.length===0) window.config.procs = [{name:"Châm cứu",price:100000}];
-            if (window.db.length===0) window.db = [{id:"1",name:"Nguyễn Văn A",year:"1990",phone:"0909000111",visits:[]}];
-            window.saveDb(); window.saveConfig();
-        };
-
-        // --- NUMBER PAD ---
-        window.openNumberPad = function(id,title,range,def) {
-            currentNumberInput = id; numberPadConfig.isPhone = false; numberPadValue = (document.getElementById(id).value||def).toString();
-            document.getElementById('numberPadTitle').innerText = title; 
-            document.getElementById('numberPadDisplay').innerText = numberPadValue;
-            document.getElementById('numberPadModal').classList.add('active');
-            if(range && range.includes('-')) {
-                const [min,max] = range.split('-'); numberPadConfig.min = parseInt(min); numberPadConfig.max = parseInt(max);
-            }
-        };
-        
-        window.openPhonePad = function() {
-            currentNumberInput = 'pPhone'; numberPadConfig.isPhone = true; numberPadValue = document.getElementById('pPhone').value;
-            document.getElementById('numberPadTitle').innerText = 'Số điện thoại';
-            document.getElementById('numberPadDisplay').innerText = numberPadValue || "";
-            document.getElementById('numberPadModal').classList.add('active');
-        };
-        
-        window.addNumberPadDigit = function(d) {
-            if(numberPadConfig.isPhone) { if(numberPadValue.length<15) numberPadValue+=d; }
-            else { if(numberPadValue==="0") numberPadValue=d; else { const n = parseInt(numberPadValue+d); if(n<=numberPadConfig.max) numberPadValue+=d; } }
-            document.getElementById('numberPadDisplay').innerText = numberPadValue;
-        };
-        
-        window.deleteNumberPadDigit = function() { numberPadValue = numberPadValue.slice(0,-1); document.getElementById('numberPadDisplay').innerText = numberPadValue||"0"; };
-        
-        window.clearNumberPad = function() { numberPadValue = ""; document.getElementById('numberPadDisplay').innerText = "0"; };
-        
-        window.closeNumberPad = function() { document.getElementById('numberPadModal').classList.remove('active'); };
-        
-        window.confirmNumberPad = function() {
-            if(currentNumberInput) {
-                document.getElementById(currentNumberInput).value = numberPadValue;
-                if(currentNumberInput.startsWith('vBp')) window.updateBpDisplay();
-                else if(currentNumberInput==='vPulse') document.getElementById('displayPulse').innerText = numberPadValue;
-                else if(currentNumberInput==='vHeight'||currentNumberInput==='vWeight') window.updateHeightWeightDisplay();
-                else if(currentNumberInput==='vDiscountPercent') {
-                    document.getElementById('discountBtn').innerText = numberPadValue + "% ▼"; window.calcTotal();
-                }
-                else if(currentNumberInput.startsWith('proc_disc_')) {
-                    const idx = currentNumberInput.split('_')[2];
-                    document.getElementById(`proc_disp_${idx}`).innerText = numberPadValue + "%";
-                    window.calcTotal();
-                }
-                else if(currentNumberInput.startsWith('med_days_')) {
-                    const parts = currentNumberInput.split('_');
-                    const type = parts[2];
-                    const idx = parts[3];
-                    window.updateMedDays(type, idx, numberPadValue);
-                }
-                else if(currentNumberInput.startsWith('proc_days_')) {
-                    const idx = currentNumberInput.split('_')[2];
-                    window.updateProcDays(idx, numberPadValue);
-                }
-            }
-            window.closeNumberPad();
-        };
-        
-        window.updateBpDisplay = function() { 
-            document.getElementById('displayBP').innerText = (document.getElementById('vBpSys').value||120)+'/'+(document.getElementById('vBpDia').value||80); 
-        };
-        
-        window.updateHeightWeightDisplay = function() {
-            const h = document.getElementById('vHeight').value, w = document.getElementById('vWeight').value;
-            document.getElementById('displayHeightWeight').innerText = `${h}cm - ${w}kg`;
-            if(h>0 && w>0) document.getElementById('displayBMI').innerText = 'BMI: ' + (w/((h/100)*(h/100))).toFixed(1);
-        };
-        
-        window.initDefaultValues = function() {
-            if(!document.getElementById('vBpSys').value) {
-                document.getElementById('vBpSys').value=120; document.getElementById('vBpDia').value=80;
-                document.getElementById('vPulse').value=80; document.getElementById('vHeight').value=165; document.getElementById('vWeight').value=60;
-            }
-        };
-
-        // --- PATIENT & LIST ---
-        let searchTimeout;
-        window.debouncedRender = function() { clearTimeout(searchTimeout); searchTimeout = setTimeout(window.render, 250); };
-        
-        window.render = function() {
-            const list = document.getElementById('list'), kw = document.getElementById('search').value.toLowerCase();
-            list.innerHTML = window.db.map(p => {
-                if(p.name.toLowerCase().includes(kw) || (p.phone && p.phone.includes(kw))) {
-                    return `<div class="patient-row"><div class="p-info" onclick="window.viewHistory('${p.id}')"><h3 class="font-bold text-lg text-[#3e2723]">${p.name}</h3><p class="text-xs text-[#8d6e63]">${p.year?'SN '+p.year:''} ${p.phone?'• '+p.phone:''}</p></div><div class="p-actions"><button onclick="window.handleEdit('${p.id}',event)" class="act-btn act-edit">SỬA</button><button onclick="window.handleExam('${p.id}',event)" class="act-btn act-exam">KHÁM</button><button onclick="window.handleDelete('${p.id}')" class="act-btn act-del">XÓA</button></div></div>`;
-                } return '';
-            }).join('');
-            document.getElementById('monthLabel').innerText = `T${new Date().getMonth()+1}`;
-            window.updateProfitDisplay();
-        };
-        
-        window.handleEdit = function(id,e) { e.stopPropagation(); window.openPatientModal(id); };
-        window.handleExam = function(id,e) { e.stopPropagation(); window.startVisit(id); };
-        
-        window.handleDelete = function(id) { 
-            if(confirm('Xóa bệnh nhân này?')) { 
-                window.db = window.db.filter(x=>String(x.id)!==String(id)); 
-                window.saveDb(); 
-                window.render(); 
-            } 
-        };
-        
-        window.openPatientModal = function(id=null) {
-            document.getElementById('pEditId').value = id||'';
-            if(id) { 
-                const p = window.db.find(x=>x.id==id); 
-                document.getElementById('pName').value=p.name; 
-                document.getElementById('pYear').value=p.year; 
-                document.getElementById('pPhone').value=p.phone; 
-                document.getElementById('pAddress').value=p.address; 
-            }
-            else { 
-                document.getElementById('pName').value=''; 
-                document.getElementById('pYear').value=''; 
-                document.getElementById('pPhone').value=''; 
-                document.getElementById('pAddress').value=''; 
-            }
-            document.getElementById('pModal').classList.add('active');
-        };
-        
-        window.savePatient = function() {
-            const name = document.getElementById('pName').value; if(!name) return alert("Nhập tên!");
-            const id = document.getElementById('pEditId').value, p = { 
-                id: id||Date.now().toString(), 
-                name: name, 
-                year: document.getElementById('pYear').value, 
-                phone: document.getElementById('pPhone').value, 
-                address: document.getElementById('pAddress').value, 
-                visits: id?window.db.find(x=>x.id==id).visits:[] 
-            };
-            if(id) window.db[window.db.findIndex(x=>x.id==id)] = p; 
-            else window.db.unshift(p);
-            window.saveDb(); window.closeModals(); window.render();
-        };
-
-        // --- DISEASE MANAGEMENT FUNCTIONS ---
-        window.addNewDisease = function() {
-            // Close settings modal first
-            window.closeModals();
-            
-            // Open disease modal
-            setTimeout(() => {
-                document.getElementById('diseaseModalTitle').innerText = 'Thêm Bệnh Mới';
-                document.getElementById('diseaseEditIndex').value = '';
-                document.getElementById('diseaseName').value = '';
-                document.getElementById('diseaseSymptoms').value = '';
-                document.getElementById('diseaseEastName').value = '';
-                
-                // Clear containers
-                document.getElementById('eastIngredientsContainer').innerHTML = '';
-                document.getElementById('westMedicinesContainer').innerHTML = '';
-                
-                // Add one empty ingredient and medicine row
-                window.addEastIngredient();
-                window.addWestMedicine();
-                
-                document.getElementById('diseaseModal').classList.add('active');
-            }, 100);
-        };
-
-        window.addEastIngredient = function() {
-            const container = document.getElementById('eastIngredientsContainer');
-            const index = container.children.length;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><input type="text" class="east-ingredient-name song-input text-sm" placeholder="Tên vị thuốc" value=""></td>
-                <td><input type="number" class="east-ingredient-qty song-input text-sm" placeholder="Số gam" value="10"></td>
-                <td><input type="number" class="east-ingredient-days song-input text-sm" placeholder="Số ngày" value="3"></td>
-                <td><input type="number" class="east-ingredient-price song-input text-sm" placeholder="Đơn giá" value="0"></td>
-                <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
-            `;
-            container.appendChild(row);
-        };
-
-        window.addWestMedicine = function() {
-            const container = document.getElementById('westMedicinesContainer');
-            const index = container.children.length;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><input type="text" class="west-medicine-name song-input text-sm" placeholder="Tên thuốc" value=""></td>
-                <td><input type="number" class="west-medicine-qty song-input text-sm" placeholder="Số viên/ngày" value="2"></td>
-                <td><input type="number" class="west-medicine-days song-input text-sm" placeholder="Số ngày" value="3"></td>
-                <td><input type="number" class="west-medicine-price song-input text-sm" placeholder="Đơn giá" value="0"></td>
-                <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
-            `;
-            container.appendChild(row);
-        };
-
-        window.editDisease = function(index) {
-            const disease = window.config.diseases[index];
-            document.getElementById('diseaseModalTitle').innerText = 'Sửa Bệnh';
-            document.getElementById('diseaseEditIndex').value = index;
-            document.getElementById('diseaseName').value = disease.name || '';
-            document.getElementById('diseaseSymptoms').value = disease.sym || '';
-            
-            // Clear containers
-            document.getElementById('eastIngredientsContainer').innerHTML = '';
-            document.getElementById('westMedicinesContainer').innerHTML = '';
-            
-            // Load Eastern ingredients
-            if (disease.eastOptions && disease.eastOptions.length > 0) {
-                const eastOption = disease.eastOptions[0];
-                document.getElementById('diseaseEastName').value = eastOption.name || '';
-                
-                if (eastOption.ingredients && eastOption.ingredients.length > 0) {
-                    eastOption.ingredients.forEach(ing => {
-                        const container = document.getElementById('eastIngredientsContainer');
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td><input type="text" class="east-ingredient-name song-input text-sm" placeholder="Tên vị thuốc" value="${ing.name || ''}"></td>
-                            <td><input type="number" class="east-ingredient-qty song-input text-sm" placeholder="Số gam" value="${ing.qty || 0}"></td>
-                            <td><input type="number" class="east-ingredient-days song-input text-sm" placeholder="Số ngày" value="${ing.days || 1}"></td>
-                            <td><input type="number" class="east-ingredient-price song-input text-sm" placeholder="Đơn giá" value="${ing.price || 0}"></td>
-                            <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
-                        `;
-                        container.appendChild(row);
-                    });
-                } else {
-                    window.addEastIngredient();
-                }
-            } else {
-                window.addEastIngredient();
-            }
-            
-            // Load Western medicines
-            if (disease.rxWest && disease.rxWest.length > 0) {
-                disease.rxWest.forEach(med => {
-                    const container = document.getElementById('westMedicinesContainer');
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td><input type="text" class="west-medicine-name song-input text-sm" placeholder="Tên thuốc" value="${med.name || ''}"></td>
-                        <td><input type="number" class="west-medicine-qty song-input text-sm" placeholder="Số viên/ngày" value="${med.qty || 0}"></td>
-                        <td><input type="number" class="west-medicine-days song-input text-sm" placeholder="Số ngày" value="${med.days || 1}"></td>
-                        <td><input type="number" class="west-medicine-price song-input text-sm" placeholder="Đơn giá" value="${med.price || 0}"></td>
-                        <td><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold px-2">×</button></td>
-                    `;
-                    container.appendChild(row);
-                });
-            } else {
-                window.addWestMedicine();
-            }
-            
-            document.getElementById('diseaseModal').classList.add('active');
-        };
-
-        window.saveDisease = function() {
-            const name = document.getElementById('diseaseName').value.trim();
-            if (!name) {
-                alert('Vui lòng nhập tên bệnh');
-                return;
-            }
-            
-            const symptoms = document.getElementById('diseaseSymptoms').value.trim();
-            const eastName = document.getElementById('diseaseEastName').value.trim() || 'Bài thuốc mẫu';
-            
-            // Collect Eastern ingredients
-            const eastIngredients = [];
-            document.querySelectorAll('#eastIngredientsContainer tr').forEach(row => {
-                const name = row.querySelector('.east-ingredient-name').value.trim();
-                const qty = parseInt(row.querySelector('.east-ingredient-qty').value) || 0;
-                const days = parseInt(row.querySelector('.east-ingredient-days').value) || 1;
-                const price = parseInt(row.querySelector('.east-ingredient-price').value) || 0;
-                
-                if (name) {
-                    eastIngredients.push({
-                        name: name,
-                        qty: qty,
-                        days: days,
-                        price: price
-                    });
-                }
-            });
-            
-            // Collect Western medicines
-            const rxWest = [];
-            document.querySelectorAll('#westMedicinesContainer tr').forEach(row => {
-                const name = row.querySelector('.west-medicine-name').value.trim();
-                const qty = parseInt(row.querySelector('.west-medicine-qty').value) || 0;
-                const days = parseInt(row.querySelector('.west-medicine-days').value) || 1;
-                const price = parseInt(row.querySelector('.west-medicine-price').value) || 0;
-                
-                if (name) {
-                    rxWest.push({
-                        name: name,
-                        qty: qty,
-                        days: days,
-                        price: price
-                    });
-                }
-            });
-            
-            const disease = {
-                name: name,
-                sym: symptoms,
-                rxWest: rxWest,
-                eastOptions: eastIngredients.length > 0 ? [{
-                    name: eastName,
-                    ingredients: eastIngredients
-                }] : []
-            };
-            
-            const editIndex = document.getElementById('diseaseEditIndex').value;
-            if (editIndex !== '') {
-                // Edit existing disease
-                window.config.diseases[editIndex] = disease;
-            } else {
-                // Add new disease
-                window.config.diseases.push(disease);
-            }
-            
-            window.saveConfig();
-            window.renderDiseaseSettings();
-            window.closeModals();
-        };
-
-        window.deleteDisease = function(index) {
-            if (confirm('Bạn có chắc chắn muốn xóa bệnh này?')) {
-                window.config.diseases.splice(index, 1);
-                window.saveConfig();
-                window.renderDiseaseSettings();
-            }
-        };
-
-        window.renderDiseaseSettings = function() { 
-            document.getElementById('diseaseList').innerHTML = window.config.diseases.map((d,i)=>`
-                <div class="flex justify-between items-center p-3 border border-[#eee] rounded-lg bg-white shadow-sm">
-                    <div class="font-bold text-sm text-[#3e2723]">${d.name}</div>
-                    <div class="flex gap-2">
-                        <button onclick="window.editDisease(${i})" class="text-xs px-3 py-1 bg-[#efebe9] rounded font-bold text-[#5d4037]">SỬA</button>
-                        <button onclick="window.deleteDisease(${i})" class="text-xs px-3 py-1 bg-red-50 rounded text-red-600">XÓA</button>
-                    </div>
-                </div>`).join(''); 
-        };
-
-        // --- VISIT ---
-        window.startVisit = function(pid, vid=null) {
-            const p = window.db.find(x=>x.id==pid); if(!p) return;
-            document.getElementById('vPid').value = pid; document.getElementById('vVisitId').value = vid||'';
-            document.getElementById('vPatientName').innerText = p.name;
-            currentVisit = { 
-                step: 1, 
-                rxEast: [], 
-                rxWest: [], 
-                procs: [], 
-                manualMedTotalEast: 0, 
-                manualMedTotalWest: 0,
-                tuChan: {vong:[],van:[],vanhoi:[],thiet:[],thietchan:[],machchan:[]} 
-            };
-            
-            // Reset fields
-            document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('vDiseaseInput').value = ''; document.getElementById('vSpecial').value = '';
-            document.getElementById('vCost').value = 0; document.getElementById('vDiscountPercent').value = 0;
-            document.getElementById('discountBtn').innerText = '0% ▼';
-            
-            // Render basic UI
-            document.getElementById('vDiseaseSelect').innerHTML = '<option value="">-- Chọn bệnh mẫu --</option>' + window.config.diseases.map(d=>`<option value="${d.name}">${d.name}</option>`).join('');
-            window.renderProcList(); window.renderMedList('east'); window.renderMedList('west');
-            
-            // Populate if edit
-            if(vid) {
-                const v = p.visits.find(x=>x.id==vid);
-                if(v) {
-                    document.getElementById('vDate').value = v.date; 
-                    document.getElementById('vDiseaseInput').value = v.disease;
-                    document.getElementById('vSpecial').value = v.symptoms; 
-                    document.getElementById('vCost').value = v.cost;
-                    document.getElementById('vDiscountPercent').value = v.disc||0; 
-                    document.getElementById('discountBtn').innerText = (v.disc||0)+'% ▼';
-                    if(v.tuChan) currentVisit.tuChan = v.tuChan;
-                    if(v.vong) document.getElementById('vVongExtra').value = v.vong;
-                    
-                    currentVisit.rxEast = JSON.parse(JSON.stringify(v.rxEast||[])); 
-                    currentVisit.rxWest = JSON.parse(JSON.stringify(v.rxWest||[]));
-                    currentVisit.procs = JSON.parse(JSON.stringify(v.procs||[]));
-                    
-                    currentVisit.manualMedTotalEast = v.medPriceEast || 0;
-                    currentVisit.manualMedTotalWest = v.medPriceWest || 0;
-                    
-                    window.renderMedList('east'); 
-                    window.renderMedList('west'); 
-                    window.renderProcList();
-                    window.calcTotal();
-                }
-            }
-            window.goToStep(1); 
-            document.getElementById('vModal').classList.add('active');
-        };
-
-        // --- PROCEDURES ---
-        window.renderProcList = function() {
-            const container = document.getElementById('vProcList');
-            container.innerHTML = '';
-            
-            currentVisit.procs.forEach((proc, idx) => {
-                const procTemplate = window.config.procs.find(p => p.name === proc.name);
-                const price = procTemplate ? procTemplate.price : proc.price;
-                
-                const procDiv = document.createElement('div');
-                procDiv.className = 'procedure-item';
-                procDiv.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="flex items-center gap-2">
-                            <button onclick="window.removeProcedure(${idx})" class="text-red-500 font-bold text-lg">×</button>
-                            <div>
-                                <div class="font-bold text-sm text-[#3e2723]">${proc.name}</div>
-                                <div class="text-xs text-gray-500">${price.toLocaleString()}đ/lần</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500">Giảm:</span>
-                            <button onclick="window.openNumberPad('proc_disc_${idx}', 'Giảm giá (%)', '0-100', ${proc.discount||0})" class="discount-btn text-xs">${proc.discount||0}%</button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="song-label text-[10px]">Số ngày</label>
-                            <div class="flex items-center gap-2">
-                                <input type="number" min="1" value="${proc.days||1}" 
-                                       onchange="window.updateProcDays(${idx}, this.value)"
-                                       class="days-input ipad-input-fix">
-                                <span class="text-xs">ngày</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="song-label text-[10px]">Ghi chú buổi</label>
-                            <div class="flex gap-1">
-                                <button class="time-btn ${(proc.note||'').includes('Sáng')?'active':''}" 
-                                        onclick="window.toggleProcNote(${idx}, 'Sáng')">Sáng</button>
-                                <button class="time-btn ${(proc.note||'').includes('Trưa')?'active':''}" 
-                                        onclick="window.toggleProcNote(${idx}, 'Trưa')">Trưa</button>
-                                <button class="time-btn ${(proc.note||'').includes('Chiều')?'active':''}" 
-                                        onclick="window.toggleProcNote(${idx}, 'Chiều')">Chiều</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <input type="text" value="${proc.note||''}" 
-                               onchange="window.updateProcNoteText(${idx}, this.value)"
-                               placeholder="Ghi chú khác..." 
-                               class="song-input text-xs py-1 ipad-input-fix">
-                    </div>
-                    <div class="text-right text-xs font-bold mt-1">
-                        Thành tiền: ${((price * (proc.days||1)) * (1 - (proc.discount||0)/100)).toLocaleString()}đ
-                    </div>
-                `;
-                container.appendChild(procDiv);
-            });
-            
-            // Add button to add new procedure
-            if (currentVisit.procs.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8 text-gray-400">
-                        <p>Chưa có thủ thuật nào</p>
-                        <button onclick="window.addProcedureRow()" class="mt-2 text-blue-600 text-sm underline">+ Thêm thủ thuật</button>
-                    </div>
-                `;
-            }
-        };
-        
-        window.addProcedureRow = function() {
-            // Show selection modal or directly add from config
-            if (window.config.procs.length === 0) {
-                alert("Chưa có dịch vụ thủ thuật nào trong cài đặt. Vui lòng thêm dịch vụ trước.");
-                return;
-            }
-            
-            // Create a simple selection
-            const procName = prompt("Nhập tên thủ thuật (hoặc chọn từ danh sách):\n" + 
-                                  window.config.procs.map(p => p.name).join(", "));
-            if (!procName) return;
-            
-            const procTemplate = window.config.procs.find(p => p.name === procName);
-            const price = procTemplate ? procTemplate.price : 0;
-            
-            currentVisit.procs.push({
-                name: procName,
-                price: price,
-                days: 1,
-                discount: 0,
-                note: ''
-            });
-            
-            window.renderProcList();
-            window.calcTotal();
-        };
-        
-        window.removeProcedure = function(idx) {
-            if (confirm("Xóa thủ thuật này?")) {
-                currentVisit.procs.splice(idx, 1);
-                window.renderProcList();
-                window.calcTotal();
-            }
-        };
-        
-        window.updateProcDays = function(idx, days) {
-            days = parseInt(days) || 1;
-            if (days < 1) days = 1;
-            currentVisit.procs[idx].days = days;
-            window.renderProcList();
-            window.calcTotal();
-        };
-        
-        window.toggleProcNote = function(idx, time) {
-            const proc = currentVisit.procs[idx];
-            const note = proc.note || '';
-            const times = note.split(',').filter(t => t.trim());
-            
-            if (times.includes(time)) {
-                // Remove time
-                const newTimes = times.filter(t => t !== time);
-                proc.note = newTimes.join(', ');
-            } else {
-                // Add time
-                times.push(time);
-                proc.note = times.join(', ');
-            }
-            
-            window.renderProcList();
-        };
-        
-        window.updateProcNoteText = function(idx, text) {
-            currentVisit.procs[idx].note = text;
-        };
-
-        // --- MEDICINES ---
-        window.loadDiseaseSuggestions = function() {
-            const dName = document.getElementById('vDiseaseSelect').value;
-            const box = document.getElementById('suggestedSymptomsBox'), preArea = document.getElementById('eastPresetsArea');
-            if(!dName) { box.classList.add('hidden'); preArea.classList.add('hidden'); return; }
-            const d = window.config.diseases.find(x=>x.name===dName);
-            if(d) {
-                if(d.sym) { 
-                    box.classList.remove('hidden'); 
-                    document.getElementById('symptomButtons').innerHTML = d.sym.split(',').map(s=>`
-                        <span onclick="document.getElementById('vSpecial').value+=(document.getElementById('vSpecial').value?', ':'')+'${s.trim()}'" 
-                              class="med-chip">${s.trim()}</span>`).join(''); 
-                }
-                else box.classList.add('hidden');
-                
-                currentVisit.rxWest = JSON.parse(JSON.stringify(d.rxWest||[])); 
-                window.renderMedList('west');
-                
-                if(d.eastOptions?.length) { 
-                    preArea.classList.remove('hidden'); 
-                    document.getElementById('eastPresetButtons').innerHTML = d.eastOptions.map((o,i)=>`
-                        <div class="med-chip" onclick="window.applyEasternSample(${i})">${o.name}</div>`).join(''); 
-                }
-                else preArea.classList.add('hidden');
-                window.calcTotal();
-            }
-        };
-        
-        window.applyEasternSample = function(i) {
-            const d = window.config.diseases.find(x=>x.name===document.getElementById('vDiseaseSelect').value);
-            if(d && d.eastOptions[i]) { 
-                currentVisit.rxEast = JSON.parse(JSON.stringify(d.eastOptions[i].ingredients)); 
-                window.renderMedList('east'); 
-                window.autoCalcMedTotal(); 
-            }
-        };
-        
-        window.renderMedList = function(type) {
-            const list = document.getElementById(type==='east'?'vMedListEast':'vMedListWest');
-            const data = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
-            
-            list.innerHTML = data.map((m,i)=>`
-                <div class="visit-medicine-row">
-                    <button onclick="window.removeMed('${type}',${i})" class="med-actions text-red-400 font-bold px-2">×</button>
-                    <input type="text" value="${m.name}" onchange="window.updateMed('${type}',${i},'name',this.value)" 
-                           class="med-name song-input ipad-input-fix" placeholder="Tên thuốc">
-                    <input type="number" value="${m.qty}" onchange="window.updateMed('${type}',${i},'qty',this.value)" 
-                           class="med-qty song-input ipad-input-fix text-center" placeholder="Số lượng">
-                    <input type="number" value="${m.days||1}" onchange="window.updateMedDays('${type}',${i},this.value)" 
-                           class="med-days song-input ipad-input-fix text-center" placeholder="Ngày">
-                    <input type="number" value="${m.price||0}" onchange="window.updateMed('${type}',${i},'price',this.value)" 
-                           class="med-price song-input ipad-input-fix text-right" placeholder="Đơn giá">
-                    <div class="med-time">
-                        <label class="text-[10px] text-gray-500 block mb-1">Cách dùng</label>
-                        <div class="visit-time-buttons">
-                            <button class="time-btn ${(m.usage||'').includes('Sáng')?'active':''}" 
-                                    onclick="window.toggleMedUsage('${type}',${i},'Sáng')">Sáng</button>
-                            <button class="time-btn ${(m.usage||'').includes('Trưa')?'active':''}" 
-                                    onclick="window.toggleMedUsage('${type}',${i},'Trưa')">Trưa</button>
-                            <button class="time-btn ${(m.usage||'').includes('Chiều')?'active':''}" 
-                                    onclick="window.toggleMedUsage('${type}',${i},'Chiều')">Chiều</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            
-            if (data.length === 0) {
-                list.innerHTML = `<div class="text-center py-4 text-gray-400 text-sm">Chưa có thuốc nào</div>`;
-            }
-        };
-        
-        window.addMedRow = function(type) { 
-            (type==='east'?currentVisit.rxEast:currentVisit.rxWest).push({
-                name:"", qty:1, days:1, price:0, usage:""
-            }); 
-            window.renderMedList(type); 
-        };
-        
-        window.updateMed = function(type,i,f,v) { 
-            const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
-            meds[i][f] = (f==='qty'||f==='price')?parseFloat(v):v; 
-            window.autoCalcMedTotal(); 
-        };
-        
-        window.updateMedDays = function(type,i,days) {
-            const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
-            days = parseInt(days) || 1;
-            if (days < 1) days = 1;
-            meds[i].days = days;
-            window.autoCalcMedTotal();
-        };
-        
-        window.toggleMedUsage = function(type,i,time) {
-            const meds = type==='east'?currentVisit.rxEast:currentVisit.rxWest;
-            const med = meds[i];
-            const usage = med.usage || '';
-            const times = usage.split(',').filter(t => t.trim());
-            
-            if (times.includes(time)) {
-                // Remove time
-                const newTimes = times.filter(t => t !== time);
-                med.usage = newTimes.join(', ');
-            } else {
-                // Add time
-                times.push(time);
-                med.usage = times.join(', ');
-            }
-            
-            window.renderMedList(type);
-        };
-        
-        window.removeMed = function(type,i) { 
-            (type==='east'?currentVisit.rxEast:currentVisit.rxWest).splice(i,1); 
-            window.renderMedList(type); 
-            window.autoCalcMedTotal(); 
-        };
-        
-        window.autoCalcMedTotal = function() {
-            let eastTotal = 0;
-            let westTotal = 0;
-            
-            currentVisit.rxEast.forEach(m=>{
-                eastTotal += (m.qty||0) * (m.price||0) * (m.days||1);
-            });
-            
-            currentVisit.rxWest.forEach(m=>{
-                westTotal += (m.qty||0) * (m.price||0) * (m.days||1);
-            });
-            
-            currentVisit.manualMedTotalEast = eastTotal;
-            currentVisit.manualMedTotalWest = westTotal;
-            
-            document.getElementById('displayMedTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
-            document.getElementById('displayMedTotalWest').innerText = westTotal.toLocaleString() + 'đ';
-            
-            window.calcTotal();
-        };
-        
-        window.calcTotal = function() {
-            let procTotal = 0;
-            
-            currentVisit.procs.forEach(proc => {
-                const procTemplate = window.config.procs.find(p => p.name === proc.name);
-                const price = procTemplate ? procTemplate.price : proc.price;
-                procTotal += Math.round(price * (proc.days||1) * (1 - (proc.discount||0)/100));
-            });
-            
-            const eastTotal = currentVisit.manualMedTotalEast;
-            const westTotal = currentVisit.manualMedTotalWest;
-            const total = eastTotal + westTotal + procTotal;
-            
-            document.getElementById('displayProcTotal').innerText = procTotal.toLocaleString() + 'đ';
-            document.getElementById('displayGrandTotal').innerText = total.toLocaleString() + 'đ';
-            
-            const discP = parseInt(document.getElementById('vDiscountPercent').value)||0;
-            document.getElementById('finalTotal').innerText = Math.round(total*(1-discP/100)).toLocaleString() + 'đ';
-        };
-
-        // --- TỨ CHẨN ---
-        window.renderTuchanChips = function() {
-            ['vong','van','vanhoi','thiet','thietchan','machchan'].forEach(sec => {
-                const c = document.getElementById(`tuchan${sec.charAt(0).toUpperCase()+sec.slice(1)}Buttons`);
-                if(c) c.innerHTML = (window.config.tuChan[sec]||[]).map(t=>`
-                    <div class="tuchan-chip ${currentVisit.tuChan[sec].includes(t)?'active':''}" 
-                         onclick="window.toggleTuchanChip('${sec}','${t.replace(/'/g,"\\'")}')">${t}</div>`).join('');
-            });
-        };
-        
-        window.toggleTuchanChip = function(sec,t) {
-            const idx = currentVisit.tuChan[sec].indexOf(t);
-            if(idx===-1) { 
-                currentVisit.tuChan[sec].push(t); 
-            } else { 
-                currentVisit.tuChan[sec].splice(idx,1); 
-            }
-            window.renderTuchanChips();
-        };
-        
-        // --- NAVIGATION ---
-        window.goToStep = function(s) {
-            currentVisit.step = s;
-            document.querySelectorAll('.step-content').forEach(e => { 
-                e.classList.remove('active'); 
-                e.classList.add('hidden'); 
-            });
-            document.getElementById('step'+s).classList.remove('hidden'); 
-            document.getElementById('step'+s).classList.add('active');
-            
-            document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i+1===s));
-            
-            document.getElementById('btnBack').classList.toggle('hidden', s===1);
-            document.getElementById('btnNext').classList.toggle('hidden', s===4);
-            document.getElementById('btnSaveOnly').classList.toggle('hidden', s!==4);
-            document.getElementById('btnPrint').classList.toggle('hidden', s!==4);
-            
-            if(s===1) window.renderTuchanChips();
-            if(s===3||s===4) window.calcTotal();
-            
-            // Show QR in step 4 if available
-            if(s===4) {
-                const qrSection = document.getElementById('qrPaymentSection');
-                const qrImg = document.getElementById('displayQrPayment');
-                if(window.config.qrCodeImage) {
-                    qrSection.classList.remove('hidden');
-                    qrImg.src = window.config.qrCodeImage;
-                } else {
-                    qrSection.classList.add('hidden');
-                }
-            }
-        };
-        
-        window.nextStep = function() { if(currentVisit.step<4) window.goToStep(currentVisit.step+1); };
-        window.prevStep = function() { if(currentVisit.step>1) window.goToStep(currentVisit.step-1); };
-
-        // --- SAVE & PRINT ---
-        window.saveOnly = function() { window.processSave(false); };
-        window.saveAndPrint = function() { window.processSave(true); };
-        
-        window.processSave = function(print) {
-            try {
-                const pid = document.getElementById('vPid').value; 
-                if(!pid) throw new Error("Mất kết nối bệnh nhân");
-                
-                const visit = {
-                    id: parseInt(document.getElementById('vVisitId').value)||Date.now(),
-                    date: document.getElementById('vDate').value,
-                    disease: document.getElementById('vDiseaseSelect').value||document.getElementById('vDiseaseInput').value,
-                    symptoms: document.getElementById('vSpecial').value,
-                    tuChan: currentVisit.tuChan,
-                    vong: document.getElementById('vVongExtra').value,
-                    rxEast: currentVisit.rxEast, 
-                    rxWest: currentVisit.rxWest,
-                    procs: currentVisit.procs,
-                    medPriceEast: currentVisit.manualMedTotalEast, 
-                    medPriceWest: currentVisit.manualMedTotalWest,
-                    total: parseInt(document.getElementById('finalTotal').innerText.replace(/[^\d]/g,'')),
-                    cost: parseInt(document.getElementById('vCost').value)||0,
-                    disc: parseInt(document.getElementById('vDiscountPercent').value)||0,
-                    paid: document.getElementById('vPaid').checked
-                };
-                
-                const pIdx = window.db.findIndex(x=>String(x.id)===String(pid));
-                if(pIdx>-1) {
-                    if(!window.db[pIdx].visits) window.db[pIdx].visits=[];
-                    const vIdx = window.db[pIdx].visits.findIndex(v=>v.id===visit.id);
-                    if(vIdx>-1) window.db[pIdx].visits[vIdx]=visit; 
-                    else window.db[pIdx].visits.unshift(visit);
-                    window.saveDb();
-                    
-                    if(print) {
-                        window.preparePrint('invoice');
-                    } else {
-                        alert("Đã lưu thông tin khám bệnh!");
-                        window.closeModals(); 
-                        window.render();
-                    }
-                }
-            } catch(e) { alert("Lỗi: "+e.message); }
-        };
-        
-        window.preparePrint = function(type) {
-            currentPrintType = type;
-            window.doPrint(type);
-        };
-        
-        window.doPrint = function(type) {
-            const pid = document.getElementById('vPid').value;
-            const p = window.db.find(x=>x.id==pid);
-            if (!p) return;
-            
-            // Hide all print sections first
-            document.querySelectorAll('.print-section').forEach(el => {
-                el.classList.add('hidden');
-            });
-            
-            // Calculate totals
-            let eastTotal = 0;
-            let westTotal = 0;
-            let procTotal = 0;
-            
-            currentVisit.rxEast.forEach(m => {
-                eastTotal += (m.qty||0) * (m.price||0) * (m.days||1);
-            });
-            
-            currentVisit.rxWest.forEach(m => {
-                westTotal += (m.qty||0) * (m.price||0) * (m.days||1);
-            });
-            
-            currentVisit.procs.forEach(proc => {
-                const procTemplate = window.config.procs.find(p => p.name === proc.name);
-                const price = procTemplate ? procTemplate.price : proc.price;
-                procTotal += Math.round(price * (proc.days||1) * (1 - (proc.discount||0)/100));
-            });
-            
-            const total = eastTotal + westTotal + procTotal;
-            const discP = parseInt(document.getElementById('vDiscountPercent').value)||0;
-            const finalTotal = Math.round(total*(1-discP/100));
-            
-            // Common data
-            const clinicTitle = window.config.clinicTitle || 'PHÒNG KHÁM YHCT';
-            const doctorName = window.config.doctorName ? 'BS. ' + window.config.doctorName : 'BS. Đông Y';
-            const visitDate = document.getElementById('vDate').value.split('-').reverse().join('/');
-            const disease = document.getElementById('vDiseaseSelect').value||document.getElementById('vDiseaseInput').value;
-            
-            if (type === 'east' || type === 'both') {
-                // Eastern Medicine Prescription
-                document.getElementById('printEast').classList.remove('hidden');
-                document.getElementById('prTitleEast').innerText = clinicTitle;
-                document.getElementById('prDocEast').innerText = doctorName;
-                document.getElementById('prDateEast').innerText = 'Ngày: ' + visitDate;
-                document.getElementById('prNameEast').innerText = p.name;
-                document.getElementById('prYearEast').innerText = p.year ? `(${p.year})` : '';
-                document.getElementById('prDisEast').innerText = disease;
-                document.getElementById('prSymEast').innerText = document.getElementById('vSpecial').value || '';
-                document.getElementById('prTotalEast').innerText = eastTotal.toLocaleString() + 'đ';
-                
-                // Calculate max days for eastern medicine
-                const maxDaysEast = currentVisit.rxEast.reduce((max, m) => Math.max(max, m.days||1), 1);
-                document.getElementById('prDaysEast').innerText = maxDaysEast;
-                
-                // Common usage for eastern medicine
-                const commonUsageEast = currentVisit.rxEast.map(m => m.usage || '').filter(u => u).join(', ');
-                document.getElementById('prUsageEast').innerText = commonUsageEast || 'Sáng, Chiều';
-                
-                // Eastern medicine table
-                let eastHtml = '';
-                currentVisit.rxEast.forEach(m => {
-                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
-                    eastHtml += `<tr>
-                        <td class="p-1">${m.name}</td>
-                        <td class="p-1 text-right">${m.qty || 0}g</td>
-                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
-                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
-                    </tr>`;
-                });
-                document.getElementById('prTableEast').innerHTML = eastHtml;
-            }
-            
-            if (type === 'west' || type === 'both') {
-                // Western Medicine Prescription
-                document.getElementById('printWest').classList.remove('hidden');
-                document.getElementById('prTitleWest').innerText = clinicTitle;
-                document.getElementById('prDocWest').innerText = doctorName;
-                document.getElementById('prDateWest').innerText = 'Ngày: ' + visitDate;
-                document.getElementById('prNameWest').innerText = p.name;
-                document.getElementById('prYearWest').innerText = p.year ? `(${p.year})` : '';
-                document.getElementById('prDisWest').innerText = disease;
-                document.getElementById('prTotalWest').innerText = westTotal.toLocaleString() + 'đ';
-                
-                // Calculate max days for western medicine
-                const maxDaysWest = currentVisit.rxWest.reduce((max, m) => Math.max(max, m.days||1), 1);
-                document.getElementById('prDaysWest').innerText = maxDaysWest;
-                
-                // Common usage for western medicine
-                const commonUsageWest = currentVisit.rxWest.map(m => m.usage || '').filter(u => u).join(', ');
-                document.getElementById('prUsageWest').innerText = commonUsageWest || 'Sáng, Chiều';
-                
-                // Western medicine table
-                let westHtml = '';
-                currentVisit.rxWest.forEach(m => {
-                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
-                    westHtml += `<tr>
-                        <td class="p-1">${m.name}</td>
-                        <td class="p-1 text-right">${m.qty || 0} viên</td>
-                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
-                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
-                    </tr>`;
-                });
-                document.getElementById('prTableWest').innerHTML = westHtml;
-            }
-            
-            if (type === 'both') {
-                // Combined Prescription
-                document.getElementById('printBoth').classList.remove('hidden');
-                document.getElementById('printEast').classList.add('hidden');
-                document.getElementById('printWest').classList.add('hidden');
-                
-                document.getElementById('prTitleBoth').innerText = clinicTitle;
-                document.getElementById('prDocBoth').innerText = doctorName;
-                document.getElementById('prDateBoth').innerText = 'Ngày: ' + visitDate;
-                document.getElementById('prNameBoth').innerText = p.name;
-                document.getElementById('prYearBoth').innerText = p.year ? `(${p.year})` : '';
-                document.getElementById('prDisBoth').innerText = disease;
-                document.getElementById('prSymBoth').innerText = document.getElementById('vSpecial').value || '';
-                
-                // Eastern medicine table for combined
-                let eastBothHtml = '';
-                currentVisit.rxEast.forEach(m => {
-                    eastBothHtml += `<tr>
-                        <td class="p-1">${m.name}</td>
-                        <td class="p-1 text-right">${m.qty || 0}g</td>
-                        <td class="p-1 text-right">${m.days || 1}</td>
-                        <td class="p-1 text-right">${m.usage || 'Sáng, Chiều'}</td>
-                    </tr>`;
-                });
-                document.getElementById('prTableBothEast').innerHTML = eastBothHtml;
-                
-                // Western medicine table for combined
-                let westBothHtml = '';
-                currentVisit.rxWest.forEach(m => {
-                    westBothHtml += `<tr>
-                        <td class="p-1">${m.name}</td>
-                        <td class="p-1 text-right">${m.qty || 0} viên</td>
-                        <td class="p-1 text-right">${m.days || 1}</td>
-                        <td class="p-1 text-right">${m.usage || 'Sáng, Chiều'}</td>
-                    </tr>`;
-                });
-                document.getElementById('prTableBothWest').innerHTML = westBothHtml;
-            }
-            
-            if (type === 'invoice') {
-                // Invoice
-                document.getElementById('printInvoice').classList.remove('hidden');
-                document.getElementById('prTitleInvoice').innerText = clinicTitle;
-                document.getElementById('prDocInvoice').innerText = doctorName;
-                document.getElementById('prDateInvoice').innerText = 'Ngày xuất: ' + new Date().toLocaleDateString('vi-VN');
-                document.getElementById('prVisitDateInvoice').innerText = visitDate;
-                document.getElementById('prNameInvoice').innerText = p.name;
-                document.getElementById('prYearInvoice').innerText = p.year ? `(${p.year})` : '';
-                document.getElementById('prDisInvoice').innerText = disease;
-                
-                // Invoice table
-                let invoiceHtml = '';
-                
-                // Procedures
-                currentVisit.procs.forEach(proc => {
-                    const procTemplate = window.config.procs.find(p => p.name === proc.name);
-                    const price = procTemplate ? procTemplate.price : proc.price;
-                    const totalPrice = Math.round(price * (proc.days||1) * (1 - (proc.discount||0)/100));
-                    
-                    invoiceHtml += `<tr>
-                        <td class="p-1">${proc.name} (${proc.days||1} ngày)</td>
-                        <td class="p-1 text-right">${proc.days||1}</td>
-                        <td class="p-1 text-right">${price.toLocaleString()}đ</td>
-                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
-                    </tr>`;
-                });
-                
-                // Eastern medicines
-                currentVisit.rxEast.forEach(m => {
-                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
-                    invoiceHtml += `<tr>
-                        <td class="p-1">${m.name} (${m.days||1} ngày)</td>
-                        <td class="p-1 text-right">${m.qty || 0}g × ${m.days||1}</td>
-                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
-                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
-                    </tr>`;
-                });
-                
-                // Western medicines
-                currentVisit.rxWest.forEach(m => {
-                    const totalPrice = (m.qty||0) * (m.price||0) * (m.days||1);
-                    invoiceHtml += `<tr>
-                        <td class="p-1">${m.name} (${m.days||1} ngày)</td>
-                        <td class="p-1 text-right">${m.qty || 0}v × ${m.days||1}</td>
-                        <td class="p-1 text-right">${(m.price||0).toLocaleString()}đ</td>
-                        <td class="p-1 text-right">${totalPrice.toLocaleString()}đ</td>
-                    </tr>`;
-                });
-                
-                document.getElementById('prTableInvoice').innerHTML = invoiceHtml;
-                
-                // Totals
-                document.getElementById('prProcTotalInvoice').innerText = procTotal.toLocaleString() + 'đ';
-                document.getElementById('prEastTotalInvoice').innerText = eastTotal.toLocaleString() + 'đ';
-                document.getElementById('prWestTotalInvoice').innerText = westTotal.toLocaleString() + 'đ';
-                document.getElementById('prGrandTotalInvoice').innerText = total.toLocaleString() + 'đ';
-                document.getElementById('prDiscInvoice').innerText = discP + '%';
-                document.getElementById('prFinalInvoice').innerText = finalTotal.toLocaleString() + 'đ';
-                
-                // QR Code
-                const qrImg = document.getElementById('prQrInvoice');
-                if (window.config.qrCodeImage) {
-                    qrImg.src = window.config.qrCodeImage;
-                    document.getElementById('prQrContainerInvoice').classList.remove('hidden');
-                } else {
-                    document.getElementById('prQrContainerInvoice').classList.add('hidden');
-                }
-            }
-            
-            // Print after a short delay
-            setTimeout(() => {
-                window.print();
-                // Close print modal if open
-                document.getElementById('printModal').classList.remove('active');
-            }, 300);
-        };
-        
-        window.closeModals = function() { 
-            document.querySelectorAll('.modal').forEach(m=>m.classList.remove('active')); 
-        };
-
-        // --- SETTINGS ---
-        window.switchSettingsTab = function(id, btn) {
-            document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden')); 
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); 
-            btn.classList.add('active');
-        };
-        
-        window.openSettings = function() {
-            document.getElementById('sModal').classList.add('active');
-            document.getElementById('confTitle').value = window.config.clinicTitle;
-            document.getElementById('confDoctor').value = window.config.doctorName;
-            document.getElementById('confPass').value = window.config.password;
-            
-            // Set slider value
-            document.getElementById('headerOverlayInput').value = window.config.headerOverlayOpacity || 0;
-            document.getElementById('overlayValueDisplay').innerText = (window.config.headerOverlayOpacity || 0) + '%';
-            if(window.config.qrCodeImage) document.getElementById('previewQrSettings').src = window.config.qrCodeImage;
-            
-            window.renderDiseaseSettings(); window.renderProcSettings(); window.renderTuChanConfig();
-        };
-        
-        window.saveSettings = function() {
-            window.config.clinicTitle = document.getElementById('confTitle').value;
-            window.config.doctorName = document.getElementById('confDoctor').value;
-            window.config.password = document.getElementById('confPass').value;
-            window.saveConfig(); 
-            window.closeModals();
-        };
-        
-        // --- PROFIT DISPLAY ---
-        window.handleProfitBoxClick = function() { 
-            if(!window.config.password) { 
-                window.config.profitVisible=!window.config.profitVisible; 
-                window.saveConfig(); 
-                window.updateProfitDisplay(); 
-            } else { 
-                if(window.config.profitVisible) { 
-                    window.config.profitVisible=false; 
-                    window.saveConfig(); 
-                    window.updateProfitDisplay(); 
-                } else window.openKeypad('unlock'); 
-            } 
-        };
-        
-        window.updateProfitDisplay = function() {
-            const l = document.getElementById('profitLabel');
-            if(window.config.profitVisible||!window.config.password) {
-                let t=0, cm=`${new Date().getMonth()+1}/${new Date().getFullYear()}`;
-                window.db.forEach(p=>p.visits?.forEach(v=>{ 
-                    if(new Date(v.date).getMonth()+1===new Date().getMonth()+1 && v.paid) 
-                        t+=(v.total-(v.cost||0)); 
-                }));
-                l.innerText = t.toLocaleString()+'đ';
-            } else l.innerText='******';
-        };
-
-        // --- HISTORY & STATS ---
-        window.viewHistory = function(pid) {
-            const p = window.db.find(x=>x.id==pid); 
-            document.getElementById('hName').innerText=p.name;
-            document.getElementById('hContent').innerHTML = p.visits?.map(v=>`
-                <div class="p-4 rounded-xl border border-[#eee] bg-white mb-2 shadow-sm">
-                    <div class="flex justify-between text-xs font-bold text-[#8d6e63] mb-1">
-                        <span>📅 ${v.date}</span>
-                        <span>${parseInt(v.total).toLocaleString()}đ</span>
-                    </div>
-                    <div class="font-bold text-[#5d4037] mb-1 serif">${v.disease}</div>
-                    <div class="text-xs text-gray-600 mb-2">
-                        ${v.rxEast?.length ? `Đông Y: ${v.rxEast.length} vị` : ''}
-                        ${v.rxWest?.length ? ` • Tây Y: ${v.rxWest.length} loại` : ''}
-                        ${v.procs?.length ? ` • Thủ thuật: ${v.procs.length}` : ''}
-                    </div>
-                    <div class="flex gap-2 justify-end mt-2">
-                        <button onclick="window.closeModals();window.startVisit('${pid}',${v.id})" 
-                                class="px-3 py-1 bg-[#efebe9] text-[#5d4037] text-xs rounded font-bold border">Sửa</button>
-                        <button onclick="window.deleteVisit('${pid}',${v.id})" 
-                                class="px-3 py-1 bg-white text-red-600 text-xs rounded font-bold border border-red-100">Xóa</button>
-                    </div>
-                </div>`).join('')||'<p class="text-center text-gray-400">Chưa có lịch sử khám bệnh</p>';
-            document.getElementById('hModal').classList.add('active');
-        };
-        
-        window.deleteVisit = function(pid,vid) { 
-            if(confirm("Xóa lịch sử khám này?")) { 
-                const p=window.db.find(x=>x.id==pid); 
-                p.visits=p.visits.filter(v=>v.id!=vid); 
-                window.saveDb(); 
-                window.viewHistory(pid); 
-                window.render(); 
-            } 
-        };
-        
-        window.openStats = function() { 
-            document.getElementById('analyticsModal').classList.add('active'); 
-            setTimeout(()=>{
-                window.renderAnalytics();
-                window.updateChart()
-            },300); 
-        };
-        
-        window.updateChart = function() {
-            const ctx = document.getElementById('analyticsChart').getContext('2d'); 
-            let lbl=[],data=[];
-            for(let i=5;i>=0;i--) {
-                const d=new Date(); d.setMonth(d.getMonth()-i); 
-                lbl.push(`Tháng ${d.getMonth()+1}`);
-                let m=0; 
-                window.db.forEach(p=>p.visits?.forEach(v=>{ 
-                    if(new Date(v.date).getMonth()===d.getMonth()&&v.paid) 
-                        m+=(v.total-(v.cost||0)); 
-                })); 
-                data.push(m);
-            }
-            if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, { 
-                type:'line', 
-                data:{
-                    labels:lbl,
-                    datasets:[{
-                        label:'Lợi nhuận',
-                        data:data,
-                        borderColor:'#5d4037',
-                        backgroundColor:'rgba(93, 64, 55, 0.1)',
-                        fill:true,
-                        tension:0.3
-                    }]
-                }, 
-                options:{
-                    responsive:true,
-                    maintainAspectRatio:false
-                } 
-            });
-        };
-        
-        window.renderAnalytics = function() {
-            const f = document.getElementById('anaTimeFilter').value, n = new Date();
-            let all=[]; window.db.forEach(p=>p.visits?.forEach(v=>all.push({...v,pName:p.name})));
-            currentFilteredVisits = all.filter(v=>{ 
-                const d=new Date(v.date); 
-                if(f==='today') return d.toDateString()===n.toDateString(); 
-                if(f==='month') return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); 
-                return true; 
-            });
-            currentFilteredVisits.sort((a,b)=>new Date(b.date)-new Date(a.date));
-            document.getElementById('anaTableBody').innerHTML = currentFilteredVisits.map(v=>`
-                <tr>
-                    <td class="p-2 border-b">${v.date}</td>
-                    <td class="p-2 border-b font-bold">${v.pName}</td>
-                    <td class="p-2 border-b text-xs">${v.disease}</td>
-                    <td class="p-2 border-b text-right">${v.total.toLocaleString()}</td>
-                    <td class="p-2 border-b text-right text-xs text-gray-500">${(v.total-(v.cost||0)).toLocaleString()}</td>
-                </tr>`).join('');
-        };
-
-        // --- OTHER SETTINGS FUNCTIONS ---
-        window.renderProcSettings = function() { 
-            document.getElementById('procList').innerHTML = window.config.procs.map((p,i)=>`
-                <div class="flex justify-between items-center p-3 border rounded bg-white mb-1">
-                    <div class="text-sm font-bold text-[#5d4037]">${p.name} 
-                        <span class="font-normal text-gray-400">(${p.price.toLocaleString()}đ/lần)</span>
-                    </div>
-                    <button onclick="window.deleteProc(${i})" class="text-xs px-2 py-1 bg-red-50 rounded text-red-600 hover:bg-red-100">Xóa</button>
-                </div>`).join(''); 
-        };
-        
-        window.addProc = function() { 
-            const n=document.getElementById('newProcName').value, p=parseInt(document.getElementById('newProcPrice').value); 
-            if(n&&p) { 
-                window.config.procs.push({name:n,price:p}); 
-                document.getElementById('newProcName').value=''; 
-                document.getElementById('newProcPrice').value=''; 
-                window.renderProcSettings(); 
-                window.saveConfig(); 
-            } 
-        };
-        
-        window.deleteProc = function(i) { 
-            if(confirm('Xóa dịch vụ này?')) { 
-                window.config.procs.splice(i,1); 
-                window.renderProcSettings(); 
-                window.saveConfig(); 
-            } 
-        };
-
-        // Initialize on load
-        window.onload();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
+
+
