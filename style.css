@@ -1,276 +1,470 @@
+/* --- LIQUID JADE & SONG DYNASTY STYLE (FINAL TWEAK) --- */
+
+/* 1. ROOT VARIABLES */
 :root {
-    --song-bg: #fdfbf7;
-    --song-ink: #2c2c2c;
-    --song-wood: #5d4037;
-    --song-accent: #8d6e63;
+    --song-bg: #f2ebe0; 
+    --song-wood: #5d4037; 
+    --song-wood-glass: rgba(93, 64, 55, 0.85);
+    --song-ink: #2c2926; 
+    --song-jade: #798e87; 
+    --song-jade-light: #e8f0eb;
+    --song-jade-glass: rgba(121, 142, 135, 0.25);
+    
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 32px;
+    
+    --shadow-float: 0 16px 40px rgba(62, 39, 35, 0.12);
+    --shadow-soft: 0 8px 24px rgba(93, 64, 55, 0.06);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+    
+    /* Biến Blur động */
+    --header-blur: 10px;
 }
+
+/* 2. RESET & BODY */
+* { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
 
 body { 
     background-color: var(--song-bg); 
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(93, 64, 55, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(121, 142, 135, 0.05) 0%, transparent 20%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%235d4037' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     font-family: 'Noto Sans', sans-serif; 
     color: var(--song-ink); 
     padding-bottom: 120px;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-user-select: none;
-    user-select: none;
+    margin: 0;
+    line-height: 1.5;
+    overflow-x: hidden;
 }
 
-input, textarea { -webkit-user-select: text !important; user-select: text !important; }
+.serif { font-family: 'Noto Serif', serif; }
 
-h1, h2, h3, .serif { font-family: 'Noto Serif', serif; }
-
+/* 3. HEADER & NAVIGATION */
 #mainHeader { 
-    background-color: var(--song-wood); 
-    border-radius: 0 0 24px 24px; min-height: 160px; 
+    min-height: 220px; 
+    padding-bottom: 30px;
+    background-color: var(--song-wood);
+    background-image: linear-gradient(160deg, #6d4c41 0%, #3e2723 100%);
+    background-size: cover !important;
+    background-position: center center !important;
+    border-radius: 0 0 50% 50% / 30px;
     display: flex; align-items: center; justify-content: center; 
-    box-shadow: 0 4px 15px rgba(93, 64, 55, 0.2);
-    position: relative; overflow: hidden; z-index: 10;
-    background-size: cover;
-    background-position: center;
-    transition: all 0.3s ease;
+    position: relative; z-index: 10;
+    box-shadow: var(--shadow-float);
+    transition: all 0.5s ease;
 }
 
 #headerOverlay {
-    position: absolute;
-    inset: 0;
-    background: black;
-    opacity: 0;
-    z-index: 0;
-    transition: opacity 0.3s ease;
+    position: absolute; inset: 0;
+    background: #000;
+    border-radius: 0 0 50% 50% / 30px;
+    z-index: 1; pointer-events: none;
 }
 
 .header-card {
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid #d7ccc8; border-radius: 16px; 
-    padding: 20px 24px; width: 92%; max-width: 800px; 
-    display: flex; justify-content: space-between; align-items: flex-end;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05); z-index: 11;
-    transition: all 0.3s ease;
-    position: relative;
+    background: rgba(255, 255, 255, 0.9);
+    /* Blur nền chính: Dựa vào biến JS chỉnh */
+    backdrop-filter: blur(var(--header-blur));
+    -webkit-backdrop-filter: blur(var(--header-blur));
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: var(--radius-md); 
+    padding: 16px 24px; 
+    width: 90%; max-width: 800px; 
+    display: flex; justify-content: space-between; align-items: center; 
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); 
+    position: relative; z-index: 50 !important; 
+    margin-bottom: 10px; transition: all 0.4s ease;
 }
 
+/* Header trong suốt (khi có ảnh nền) */
 .header-card.transparent-mode {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(2px);
+    background: rgba(255, 255, 255, 0.15); /* Giảm nền trắng xuống để thấy ảnh rõ hơn */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
-.header-card.transparent-mode h1 { color: #fff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-.header-card.transparent-mode p { color: #eee !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
-.header-card.transparent-mode .header-sep { background-color: rgba(255,255,255,0.6) !important; }
 
-.btn-glass { 
-    background: #fff; border: 1px solid #d7ccc8; color: var(--song-wood); 
-    font-weight: 700; border-radius: 12px; cursor: pointer; transition: 0.1s;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
-    -webkit-user-select: none; user-select: none;
+/* --- TÙY CHỈNH HỘP THÔNG TIN (INFO BOX) --- */
+.header-info-box {
+    /* 1. NỀN TỐI HƠN: Màu nâu gỗ với độ trong suốt 30% -> Tạo độ sâu rõ rệt */
+    background-color: rgba(62, 39, 35, 0.3) !important;
+    
+    /* 2. VIỀN RÕ HƠN */
+    border: 1px solid rgba(62, 39, 35, 0.25) !important;
+    
+    /* 3. BLUR CỘNG DỒN: Blur của con sẽ đè lên blur của cha -> Mờ hơn hẳn */
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    
+    /* 4. ĐỔ BÓNG TRONG */
+    box-shadow: inset 0 1px 15px rgba(0,0,0,0.1);
+    
+    border-radius: 12px;
+    transition: all 0.3s ease;
 }
-.btn-glass:active { transform: translateY(1px); background: #efebe9; }
 
-.btn-primary { 
-    background: var(--song-wood); color: #fff; border: none; 
-    font-weight: 700; border-radius: 12px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 3px 8px rgba(93, 64, 55, 0.3); 
-    -webkit-user-select: none; user-select: none;
-}
-.btn-primary:active { transform: scale(0.98); opacity: 0.95; }
-
-.song-input { 
-    background: #fff; border: 1px solid #d7ccc8; color: var(--song-ink); 
-    border-radius: 8px; padding: 10px 12px; width: 100%; font-size: 15px; outline: none;
-    transition: all 0.2s;
-    -webkit-user-select: text; user-select: text;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
-    -webkit-appearance: none;
-    appearance: none;
-}
-.song-input:focus { border-color: var(--song-wood); background: #fffcf7; }
-.song-label { font-size: 11px; font-weight: 700; color: #8d6e63; text-transform: uppercase; margin-bottom: 4px; display: block; }
-
-.patient-row {
-    background: #fff; border: 1px solid #eee; border-radius: 12px; 
-    margin-bottom: 12px; display: flex; overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-    position: relative; z-index: 1; min-height: 80px;
-}
-.p-info { flex: 1; padding: 14px; cursor: pointer; }
-.p-actions { display: flex; gap: 1px; z-index: 2; }
-.act-btn { 
-    width: 55px; border: none; font-size: 10px; font-weight: 800; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 100%;
-    -webkit-user-select: none; user-select: none;
-}
-.act-edit { background: #fafafa; color: #757575; border-left: 1px solid #eee; }
-.act-exam { background: #e0e5df; color: #2e4a3d; } 
-.act-del { background: #ffebee; color: #c62828; }
-.act-del:active { background: #ffcdd2; }
-
-.modal { display: none; position: fixed; inset: 0; background: rgba(62, 39, 35, 0.6); z-index: 2000; align-items: center; justify-content: center; padding: 10px; backdrop-filter: blur(3px); }
-.modal.active { display: flex; animation: fadeUp 0.2s; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-.modal-box { 
-    background: #fff; width: 100%; max-width: 650px; 
-    height: 85vh;
-    max-height: 85dvh; 
-    border-radius: 20px; 
-    display: flex; flex-direction: column;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.25); border: 1px solid #d7ccc8;
+/* CẤU HÌNH TIÊU ĐỀ */
+#displayTitle {
+    white-space: nowrap !important; 
     overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(1.2rem, 4vw, 1.875rem) !important; 
+    line-height: 1.2;
+    display: block;
+    width: 100%;
 }
 
-.modal-header { flex-shrink: 0; padding: 16px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+/* Các nhãn trong Header */
+#mainHeaderCard, 
+#mainHeaderCard span, 
+#mainHeaderCard p, 
+#mainHeaderCard h1, 
+#mainHeaderCard div {
+    color: #3e2723; /* Màu mặc định */
+    opacity: 1; 
+    text-shadow: none;
+}
 
-.modal-body { 
-    flex-grow: 1; 
-    overflow-y: auto; 
-    padding: 20px; 
-    background: #fff; 
-    -webkit-overflow-scrolling: touch; 
+#monthLabel {
+    font-size: 11px !important; font-weight: 800 !important;
+    text-transform: uppercase;
+    margin-bottom: 4px; letter-spacing: 1px;
+    text-align: center; opacity: 1; transition: color 0.3s ease;
+}
+
+#profitLabel {
+    min-width: 130px; display: inline-block; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;
+    font-weight: 900 !important;
+}
+
+#mainHeaderCard .text-xs { font-weight: 600 !important; }
+.header-sep-line { border-color: rgba(62, 39, 35, 0.3) !important; }
+
+
+/* 4. SEARCH & MENU */
+#menuContainer {
+    position: relative; z-index: 20;
+    padding-bottom: 80px; margin-top: 20px;
+    padding-left: 20px; padding-right: 20px;
+}
+
+#searchArea {
+    margin-top: 0; margin-bottom: 20px;
+    position: relative; z-index: 40; padding: 0 5px;
+}
+
+#search {
+    height: 60px; width: 100%; border-radius: 20px;
+    background: #fff; border: 1px solid rgba(141, 110, 99, 0.2);
+    box-shadow: 0 4px 15px rgba(93, 64, 55, 0.05);
+    font-size: 16px; padding-left: 24px;
+    transition: all 0.3s; color: #3e2723;
+}
+#search:focus { transform: translateY(-2px); box-shadow: var(--shadow-float); border-color: var(--song-wood); }
+
+
+/* 5. BUTTONS (LIQUID GLASS) */
+.btn-glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(245, 240, 230, 0.8) 100%);
+    border: 1px solid #fff; color: var(--song-wood);
+    border-radius: 16px; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(62, 39, 35, 0.06);
+    transition: all 0.2s; cursor: pointer; position: relative; padding: 16px 8px;
+}
+.btn-glass:active { transform: scale(0.96); background: rgba(230, 220, 210, 0.8); }
+
+.btn-primary {
+    background: var(--song-wood);
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.2) 100%);
+    color: #f2ebe0; border: none; border-radius: 16px; font-weight: 700;
+    box-shadow: 0 8px 20px rgba(62, 39, 35, 0.3);
+    transition: all 0.2s; cursor: pointer;
+}
+.btn-primary:active { transform: scale(0.96); opacity: 0.95; }
+
+
+/* 6. PATIENT LIST */
+.patient-row {
+    background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6); border-left: 5px solid #8d6e63;
+    border-radius: 16px; margin-bottom: 12px;
+    box-shadow: 0 4px 15px rgba(62, 39, 35, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden; display: flex; align-items: stretch;
+    position: relative; z-index: 25; cursor: pointer;
+}
+.patient-row:active { transform: scale(0.98); }
+.p-info { padding: 16px 20px; flex: 1; }
+.p-actions { display: flex; gap: 4px; padding: 4px 6px 4px 0; align-items: center; }
+
+.act-btn {
+    width: 55px; height: 100%; border: none;
+    font-size: 10px; font-weight: 800; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 12px; transition: all 0.2s;
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 4px rgba(62,39,35,0.1);
+}
+.act-btn:active { transform: scale(0.94); opacity: 0.95; }
+
+.act-edit { background: linear-gradient(145deg, rgba(225, 214, 194, 0.9), rgba(199, 183, 158, 0.8)); color: #5d4037; border: 1px solid rgba(255, 255, 255, 0.4); }
+.act-exam { background: linear-gradient(145deg, rgba(141, 110, 99, 0.95), rgba(93, 64, 55, 0.9)); color: #fdfbf7; width: 65px; box-shadow: 0 4px 10px rgba(93, 64, 55, 0.25), inset 0 1px 0 rgba(255,255,255,0.25); z-index: 2; border: 1px solid rgba(161, 136, 127, 0.5); }
+.act-del { background: linear-gradient(145deg, rgba(215, 204, 200, 0.9), rgba(188, 170, 164, 0.8)); color: #c62828; border: 1px solid rgba(255, 255, 255, 0.3); }
+
+
+/* 7. MODAL SYSTEM */
+.modal {
+    position: fixed; inset: 0; background: rgba(44, 41, 38, 0.75);
+    backdrop-filter: blur(6px); transition: all 0.3s;
+    z-index: 2000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; pointer-events: none;
+}
+.modal.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+.modal-box {
+    background: #fcfbf8; border-radius: var(--radius-lg);
+    box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.6); overflow: hidden;
+}
+
+.modal-header {
+    background: #f2ebe0; padding: 20px 24px;
+    border-bottom: 1px dashed #bcaaa4;
+    display: flex; justify-content: space-between; align-items: center;
 }
 
 .modal-footer {
-    flex-shrink: 0;
-    padding: 16px;
-    padding-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 20px 24px; background: #f2ebe0;
+    border-top: 1px dashed #bcaaa4;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.modal-footer button {
+    flex: 1; height: 50px; font-size: 14px;
+    text-transform: uppercase; letter-spacing: 1px; margin: 0;
+}
+
+
+/* 8. GIAO DIỆN KHÁM BỆNH & COMPONENTS */
+
+/* TABS */
+.tabs {
+    display: flex; gap: 10px; padding: 15px 20px;
+    background: #fbf8f5; border-bottom: 1px solid #efebe9;
+    overflow-x: auto; scroll-behavior: smooth;
+}
+.tab-btn {
+    padding: 10px 18px; border-radius: 20px;
+    background: transparent; border: 1px solid transparent;
+    color: #8d6e63; font-size: 13px; font-weight: 700;
+    white-space: nowrap; transition: all 0.3s ease;
+}
+.tab-btn.active {
+    background: #5d4037; color: #fff;
+    box-shadow: 0 4px 12px rgba(93, 64, 55, 0.3);
+}
+
+/* SINH HIỆU GRID */
+.vital-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    background: #fff; border: 1px solid #d7ccc8; border-radius: 20px;
+    padding: 20px; box-shadow: 0 8px 24px rgba(62, 39, 35, 0.06); margin-top: 10px;
+}
+.vital-item { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.vital-item label {
+    font-size: 11px; color: #8d6e63; text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 8px; border-bottom: 1px dashed #eee; padding-bottom: 4px;
+    width: 100%; text-align: center;
+}
+.med-input-large {
+    background: #fdfbf9; border: 1px solid #efebe9; border-radius: 12px;
+    height: 48px; width: 100%; text-align: center;
+    font-size: 18px !important; font-family: 'Noto Sans', sans-serif;
+    color: #3e2723; font-weight: 800;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* TỨ CHẨN CHIPS */
+.chip-container {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+}
+.tuchan-chip {
+    padding: 6px 12px; border: 1px solid #d7ccc8; border-radius: 16px;
+    font-size: 12px; background: #fff; color: #5d4037; cursor: pointer; white-space: normal;
+}
+.tuchan-chip.active { background: #5d4037; color: #fff; border-color: #5d4037; }
+
+/* THỦ THUẬT CARD */
+.proc-card {
     background: #fff;
-    border-top: 1px solid #eee;
-    display: flex; gap: 10px;
-    z-index: 50;
-    box-shadow: 0 -4px 10px rgba(0,0,0,0.03);
-}
-
-.tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px; background: #fafafa; border-bottom: 1px solid #eee; flex-shrink: 0; }
-.tab-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #eee; background: #fff; color: #9e9e9e; font-size: 13px; font-weight: 600; white-space: nowrap; -webkit-user-select: none; cursor: pointer; }
-.tab-btn.active { background: var(--song-wood); color: #fff; border-color: var(--song-wood); }
-
-/* NUMBER INPUT STYLES - FIXED FOR IPAD */
-.number-input-container { position: relative; }
-.number-input-display {
-    width: 100%; padding: 12px; text-align: center; font-size: 18px; font-weight: bold;
-    color: #3e2723; background: #fff; border: 2px solid #d7ccc8; border-radius: 12px; cursor: pointer;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
-    -webkit-appearance: none;
-    appearance: none;
-}
-.number-input-display:focus { outline: none; border-color: var(--song-wood); background: #fffcf7; }
-.number-input-label { font-size: 10px; font-weight: bold; color: #8d6e63; text-transform: uppercase; text-align: center; margin-bottom: 5px; }
-
-/* NUMBER PAD MODAL */
-.number-pad-modal { display: none; position: fixed; inset: 0; background: rgba(62, 39, 35, 0.8); z-index: 3000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
-.number-pad-modal.active { display: flex; }
-.number-pad-container { background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); }
-.number-pad-header { text-align: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 15px; }
-.number-pad-display { text-align: center; font-size: 32px; font-weight: bold; color: #3e2723; padding: 15px; background: #fafafa; border-radius: 12px; margin-bottom: 20px; min-height: 70px; display: flex; align-items: center; justify-content: center; }
-.number-pad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-.number-pad-btn { height: 60px; background: #fff; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 24px; font-weight: bold; color: #3e2723; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
-.number-pad-btn:active { background: #f5f5f5; transform: scale(0.95); }
-.number-pad-btn.delete { background: #ffebee; color: #c62828; border-color: #ffcdd2; }
-.number-pad-btn.clear { background: #fff3e0; color: #ef6c00; border-color: #ffcc80; }
-.number-pad-btn.confirm { background: var(--song-wood); color: white; border: none; font-size: 18px; }
-.number-pad-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
-.number-pad-close { height: 50px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; font-weight: bold; color: #757575; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-.med-chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #8d6e63; color: #5d4037; background: #fff; cursor: pointer; white-space: nowrap; margin-right: 6px; margin-bottom: 6px; display: inline-block; -webkit-user-select: none; }
-.med-chip.active { background: #5d4037; color: white; }
-.tuchan-chip { padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; border: 1px solid #e0e0e0; color: #666; background: #fafafa; cursor: pointer; white-space: nowrap; margin-right: 6px; margin-bottom: 6px; display: inline-block; -webkit-user-select: none; }
-.tuchan-chip.active { background: var(--song-wood); color: white; border-color: var(--song-wood); }
-.tuchan-section { padding: 12px; border-radius: 12px; margin-bottom: 10px; background: #fff; border: 1px solid #eee; }
-.tuchan-title { font-size: 13px; font-weight: 700; color: #5d4037; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; }
-.tuchan-title span { background: var(--song-wood); color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 6px; }
-
-.discount-btn { min-width: 70px; padding: 8px 12px; background: #fff9c4; color: #5d4037; border: 2px solid #ffd54f; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; text-align: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.discount-btn:hover { background: #fff59d; transform: translateY(-1px); }
-
-.backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-.backup-card { background: white; border: 2px solid #d7ccc8; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
-.backup-card:hover { transform: translateY(-2px); border-color: var(--song-wood); box-shadow: 0 5px 15px rgba(93, 64, 55, 0.15); }
-.backup-icon { font-size: 32px; margin-bottom: 10px; }
-.backup-title { font-weight: bold; color: var(--song-wood); margin-bottom: 5px; }
-.backup-desc { font-size: 11px; color: #8d6e63; }
-
-.progress-container { width: 100%; background-color: #f0f0f0; border-radius: 10px; margin: 10px 0; overflow: hidden; }
-.progress-bar { height: 20px; background-color: #4caf50; width: 0%; border-radius: 10px; transition: width 0.3s ease; text-align: center; color: white; font-size: 12px; line-height: 20px; font-weight: bold; }
-
-/* NEW STYLES FOR PROCEDURE & MEDICINE DAYS */
-.days-input-container { display: flex; align-items: center; gap: 5px; }
-.days-input { width: 60px; text-align: center; padding: 5px; border: 1px solid #d7ccc8; border-radius: 6px; }
-
-.time-btn { 
-    padding: 4px 8px; border: 1px solid #d7ccc8; border-radius: 8px; 
-    font-size: 11px; font-weight: 600; background: #fff; cursor: pointer;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     transition: all 0.2s;
 }
-.time-btn.active { background: #5d4037; color: white; border-color: #5d4037; }
+.proc-card:hover { box-shadow: 0 8px 20px rgba(93, 64, 55, 0.08); border-color: #d7ccc8; }
 
-.procedure-item { 
-    background: #fff; border: 1px solid #eee; border-radius: 12px; 
-    padding: 12px; margin-bottom: 10px;
+.proc-del-btn {
+    position: absolute; top: 12px; right: 12px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #ffebee; color: #c62828; border: 1px solid #ffcdd2;
+    font-size: 14px; line-height: 22px; text-align: center; cursor: pointer;
+    transition: all 0.2s;
+}
+.proc-del-btn:hover { background: #ef9a9a; color: #fff; }
+
+.proc-input-group { display: flex; flex-direction: column; }
+.proc-input-group label {
+    font-size: 9px; text-transform: uppercase; font-weight: 700;
+    color: #a1887f; margin-bottom: 4px; text-align: center;
+}
+.proc-input {
+    width: 100%; height: 40px; border-radius: 10px;
+    border: 1px solid #e0e0e0; background: #fff;
+    font-size: 15px; color: #3e2723; text-align: center;
+    outline: none; transition: border 0.2s;
+}
+.proc-input:focus { border-color: #8d6e63; background: #fff; }
+
+.proc-total-display {
+    background: #f5f5f5; border: 1px solid #e0e0e0;
+    font-family: 'Noto Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    height: 40px; border-radius: 10px; font-weight: bold; color: #3e2723;
 }
 
-/* PRINT MODAL STYLES */
-.print-option-btn { 
-    padding: 12px; border: 2px solid #d7ccc8; border-radius: 12px; 
-    background: #fff; cursor: pointer; transition: all 0.2s;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 100px;
+/* THẺ THUỐC */
+#step3 .bg-white.p-4 {
+    border-radius: 20px; border: 1px solid #efebe9;
+    box-shadow: 0 6px 20px rgba(62, 39, 35, 0.05); margin-bottom: 20px; overflow: hidden;
 }
-.print-option-btn:hover { border-color: #5d4037; transform: translateY(-2px); }
-.print-option-btn.active { border-color: #5d4037; background: #f5f0ed; }
-
-@media print { 
-    body * { visibility: hidden; } 
-    #printArea, #printArea * { visibility: visible; } 
-    #printArea { 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 100%; 
-        padding: 20px; 
-        font-size: 12pt;
-        background: white;
-    } 
+#step3 label.font-bold.serif {
+    font-size: 18px !important; color: #3e2723 !important; font-weight: 800 !important;
+    display: block; margin-bottom: 15px; padding-bottom: 10px;
+    border-bottom: 2px solid #d7ccc8;
+    background: #faf8f5; padding: 12px 16px; border-radius: 16px 16px 0 0;
 }
 
-/* FIX FOR IPAD INPUTS */
-.ipad-input-fix {
-    -webkit-user-select: text !important;
-    user-select: text !important;
-    cursor: text;
-    -webkit-tap-highlight-color: rgba(0,0,0,0);
+/* INPUTS & CHIPS CHUNG */
+.song-input {
+    background: #fff; border: 1px solid #d7ccc8; color: #3e2723;
+    border-radius: 12px; padding: 12px 14px; outline: none; transition: all 0.3s;
+    box-shadow: inset 0 2px 4px rgba(62,39,35,0.02); width: 100%;
+}
+.song-input:focus { background: #fff; border-color: #8d6e63; box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.15); }
+.song-label {
+    font-size: 11px; font-weight: 700; color: #795548;
+    text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; display: block;
 }
 
-/* DISEASE MODAL STYLES - UPDATED FOR FIX */
-.disease-modal-container {
-    max-height: 70vh;
-    overflow-y: auto;
+.med-usage-row {
+    grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px;
+}
+.time-btn-large {
+    flex: 1; padding: 8px 0; border-radius: 12px;
+    border: 1px solid #d7ccc8; background: #fff;
+    color: #8d6e63; font-size: 12px; font-weight: 700; text-transform: uppercase;
+    transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;
+    white-space: nowrap;
+}
+.time-btn-large.active {
+    background: #5d4037; color: #fff; border-color: #5d4037;
+    box-shadow: 0 4px 10px rgba(93, 64, 55, 0.3); transform: translateY(-1px);
 }
 
-.disease-ingredient-row {
-    display: flex;
+/* AI BOX */
+#suggestedSymptomsBox { background: #f1f8e9; border: 1px dashed #aed581; border-radius: 16px; padding: 12px 16px; margin-bottom: 12px; }
+#suggestedSymptomsBox label.song-label { color: #558b2f !important; margin-bottom: 10px; border-bottom: none !important; }
+
+/* CHIPS */
+.med-chip {
+    display: inline-block; padding: 8px 16px; border-radius: 24px;
+    font-size: 13px; font-weight: 600; margin-right: 8px; margin-bottom: 8px;
+    cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.05); user-select: none;
+    background: #fff; border: 1px solid #d7ccc8; color: #5d4037;
+}
+.med-chip:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(93, 64, 55, 0.15); border-color: #8d6e63; }
+.med-chip:active { transform: scale(0.95); background: #efebe9; }
+
+#symptomButtons .med-chip { background: #fff; border: 1px solid #c5e1a5; color: #33691e; }
+#symptomButtons .med-chip:hover { background: #f1f8e9; border-color: #7cb342; }
+
+#eastPresetButtons { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+.med-chip.active-preset {
+    background: linear-gradient(145deg, #6d4c41, #3e2723) !important;
+    color: #f2ebe0 !important; border: none !important;
+    box-shadow: 0 4px 12px rgba(62, 39, 35, 0.4) !important;
+    padding-left: 20px; padding-right: 20px;
+}
+
+/* 9. MONTH CHIPS */
+#monthFilterArea { padding: 10px 4px 16px 4px; display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; }
+.month-chip {
+    padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    background: rgba(255,255,255,0.6); color: #795548; border: 1px solid rgba(255,255,255,0.8);
+    cursor: pointer; transition: all 0.3s ease;
+}
+.month-chip.active {
+    background: #5d4037; color: #f2ebe0; border-color: #5d4037;
+    box-shadow: 0 4px 12px rgba(93, 64, 55, 0.4);
+}
+
+/* 10. UTILS */
+.hidden { display: none !important; }
+.ipad-input-fix { -webkit-user-select: text !important; user-select: text !important; }
+::-webkit-scrollbar { display: none; }
+
+#numberPadModal.modal { z-index: 3000 !important; }
+#printModal.modal { z-index: 4000 !important; }
+.dot { transition: background 0.2s; }
+
+/* 11. MERGED INLINE STYLES */
+/* Hiệu ứng highlight cho AI gợi ý */
+.highlight-suggestion {
+    animation: pulse-gold 2s infinite;
+    border-color: #fdd835 !important;
+    background-color: #fff9c4 !important;
+    box-shadow: 0 0 10px rgba(253, 216, 53, 0.5);
+}
+@keyframes pulse-gold {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+/* Ẩn thanh cuộn nhưng vẫn cuộn được */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 12. COLOR PALETTE SWATCHES */
+.color-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
-    margin-bottom: 8px;
-    align-items: center;
+    margin-top: 10px;
 }
-
-.disease-ingredient-row input {
-    padding: 8px;
-    border: 1px solid #d7ccc8;
-    border-radius: 6px;
+.color-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.active { border-color: #3e2723; transform: scale(1.15); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
-/* Specific styling for name vs number inputs to fix layout */
-.disease-ingredient-row input[type="text"] {
-    flex: 1; /* Name takes remaining space */
-    min-width: 120px;
+/* 13. PRINT STYLES */
+@media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; }
+    .print-section { display: block !important; }
+    .hidden-print { display: none !important; }
+    .print-section.hidden { display: none !important; }
 }
-
-.disease-ingredient-row input[type="number"] {
-    width: 80px; /* Fixed width for numbers */
-    flex: none; /* Do not grow */
-}
-
