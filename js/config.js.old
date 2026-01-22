@@ -1,0 +1,637 @@
+/**
+ * FILE: js/config.js
+ * CHỨC NĂNG: Quản lý cấu hình, Cài đặt (Settings), Bệnh mẫu & Header.
+ * PHIÊN BẢN: Full (Fix màu Header) - ĐÃ SỬA LỖI MODAL
+ */
+
+window.config = window.config || {}; 
+
+// Bảng màu mỹ học Nhà Tống (Song Dynasty Palette)
+const songPalette = [
+    { color: '#3e2723', name: 'Mặc (Đen mực)' },
+    { color: '#5d4037', name: 'Gỗ đàn hương' },
+    { color: '#8d6e63', name: 'Đất nung' },
+    { color: '#263238', name: 'Xanh mực' },
+    { color: '#1b5e20', name: 'Tùng (Xanh thông)' },
+    { color: '#827717', name: 'Thu hương' },
+    { color: '#e65100', name: 'Chu sa (Đỏ cam)' },
+    { color: '#bf360c', name: 'Gạch nung' },
+    { color: '#006064', name: 'Lam ngọc (Đậm)' },
+    { color: '#004d40', name: 'Lục bảo' },
+    { color: '#f2ebe0', name: 'Giấy tuyên (Sáng)' },
+    { color: '#d7ccc8', name: 'Trắng sứ' },
+    { color: '#fff9c4', name: 'Vàng nhạt' },
+    { color: '#e0f2f1', name: 'Ngọc bích nhạt' },
+    { color: '#ffffff', name: 'Trắng tinh' }
+];
+
+let tempEastOptions = [];
+let currentEastOptionIndex = -1;
+
+const defaultConfig = {
+    clinicTitle: 'Phòng Khám YHCT',
+    doctorName: 'Đông Y',
+    diseases: [],
+    procs: [],
+    tuChan: {
+        vong: ['Sắc mặt hồng nhuận', 'Sắc mặt xanh tái', 'Sắc mặt vàng', 'Sắc mặt đỏ', 'Sắc mặt nhợt', 'Lưỡi to bệu', 'Rêu trắng', 'Rêu vàng'],
+        van: ['Tiếng nói nhỏ yếu', 'Tiếng nói lớn mạnh', 'Hơi thở hôi', 'Ho khan', 'Ho đờm'],
+        vanhoi: ['Ăn kém', 'Ăn ngon', 'Khát', 'Không khát', 'Đại tiện táo', 'Đại tiện lỏng', 'Ngủ kém', 'Đau đầu', 'Đau lưng'],
+        thiet: ['Da nóng', 'Da lạnh', 'Bụng mềm', 'Bụng cứng', 'Đau cự án', 'Đau thiện án'],
+        thietchan: ['Lưỡi đỏ', 'Lưỡi nhợt', 'Rêu mỏng', 'Rêu dày', 'Rêu nhớt'],
+        machchan: ['Phù', 'Trầm', 'Trì', 'Sác', 'Hoạt', 'Huyền', 'Tế', 'Nhược']
+    },
+    headerOverlayOpacity: 0,
+    headerBgImage: null,
+    qrCodeImage: null,
+    profitVisible: false,
+    password: '',
+    profitTextColor: '#3e2723',
+    profitBgColor: '#ffffff'
+};
+
+// --- HÀM XỬ LÝ HEADER (CẬP NHẬT ÁP DỤNG MÀU TOÀN BỘ) ---
+
+window.updateHeader = function() { 
+    if (!window.config) return;
+    
+    // 1. Tên Phòng Khám & Bác sĩ
+    document.getElementById('displayTitle').innerText = window.config.clinicTitle || 'Phòng Khám'; 
+    const drName = window.config.doctorName ? window.config.doctorName : 'Đông Y';
+    const drEl = document.getElementById('displayDoctor');
+    if(drEl) {
+        drEl.innerHTML = `<span class="text-xs font-bold uppercase block opacity-80 mb-1">Xin chào,</span><span class="font-black text-xl">BS. ${drName}</span>`;
+    }
+    
+    // 2. Cập nhật thông tin chuyên môn
+    if (window.knowledge) {
+        if (window.knowledge.lunar) {
+            const lunar = window.knowledge.lunar.getLunarDetails();
+            document.getElementById('headerDate').innerText = lunar.date;
+            document.getElementById('headerLunar').innerText = lunar.full;
+        }
+        if (window.knowledge.yunQi) {
+            const yunQi = window.knowledge.yunQi.getCurrentInfo();
+            document.getElementById('headerYunQi').innerText = `${yunQi.year} - ${yunQi.nature}`;
+        }
+        if (window.knowledge.ziWuFlow) {
+            const ziWu = window.knowledge.ziWuFlow.getCurrentFlow();
+            document.getElementById('headerZiWu').innerText = `Giờ ${ziWu.branch}: ${ziWu.msg}`;
+        }
+    }
+
+    // 3. Lợi nhuận & MÀU SẮC (SỬA LẠI ĐỂ ÁP DỤNG CHO TOÀN HEADER)
+    window.updateProfitDisplay();
+    
+    const profitBox = document.getElementById('profitBoxContainer');
+    const headerCard = document.getElementById('mainHeaderCard');
+
+    // Áp dụng màu CHỮ cho toàn bộ Header Card
+    if (headerCard && window.config.profitTextColor) {
+        headerCard.style.color = window.config.profitTextColor;
+        // Quét tất cả phần tử con để ép màu (đề phòng class tailwind đè)
+        const allText = headerCard.querySelectorAll('*');
+        allText.forEach(el => {
+            // Không đổi màu viền/nền, chỉ đổi màu chữ
+            el.style.color = window.config.profitTextColor;
+            el.style.borderColor = window.config.profitTextColor; // Đổi cả màu viền nét đứt cho đồng bộ
+        });
+    }
+
+    // Áp dụng màu NỀN riêng cho Hộp Doanh Thu
+    if (profitBox && window.config.profitBgColor) {
+        profitBox.style.backgroundColor = window.config.profitBgColor;
+        profitBox.style.borderColor = window.config.profitBgColor; // Viền hộp cùng màu nền cho đẹp
+        // Riêng chữ trong hộp doanh thu vẫn theo màu chữ chung đã set ở trên
+    }
+    
+    // 4. Background & Overlay
+    const header = document.getElementById('mainHeader');
+    const overlay = document.getElementById('headerOverlay');
+    
+    if (window.config.headerBgImage) {
+        header.style.backgroundImage = `url(${window.config.headerBgImage})`;
+        overlay.style.opacity = (window.config.headerOverlayOpacity || 0) / 100;
+        if(headerCard) headerCard.classList.add('transparent-mode');
+    } else {
+        header.style.backgroundImage = 'none';
+        overlay.style.opacity = 0;
+        if(headerCard) headerCard.classList.remove('transparent-mode');
+    }
+};
+
+window.handleImageUpload = function(input, configKey, previewId, isHeader = false) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        window.config[configKey] = e.target.result;
+        if (previewId) document.getElementById(previewId).src = e.target.result;
+        if (isHeader) window.updateHeader();
+        if(window.saveConfig) window.saveConfig();
+    };
+    reader.readAsDataURL(file);
+};
+
+window.updateHeaderOverlay = function(value) {
+    window.config.headerOverlayOpacity = value;
+    document.getElementById('overlayValueDisplay').innerText = value + '%';
+    document.getElementById('headerOverlay').style.opacity = value / 100;
+};
+
+window.clearHeaderImage = function() {
+    window.config.headerBgImage = null; document.getElementById('headerBgInput').value = "";
+    window.updateHeader(); if(window.saveConfig) window.saveConfig();
+};
+
+window.clearQrImage = function() {
+    window.config.qrCodeImage = null; document.getElementById('qrInput').value = "";
+    document.getElementById('previewQrSettings').src = ""; if(window.saveConfig) window.saveConfig();
+};
+
+window.handleProfitBoxClick = async function() { 
+    if(!window.config.password) { 
+        window.config.profitVisible = !window.config.profitVisible; 
+        if(window.saveConfig) await window.saveConfig(); 
+        window.updateProfitDisplay(); 
+    } else { 
+        if(window.config.profitVisible) { 
+            window.config.profitVisible = false; if(window.saveConfig) await window.saveConfig(); window.updateProfitDisplay(); 
+        } else {
+            if(window.openNativePasswordInput) {
+                window.openNativePasswordInput((inputPass) => {
+                    if (inputPass === window.config.password) {
+                        window.config.profitVisible = true; window.updateProfitDisplay(); window.saveConfig(); 
+                    } else { alert("Sai mật khẩu!"); }
+                });
+            }
+        }
+    } 
+};
+
+window.updateProfitDisplay = function() {
+    const l = document.getElementById('profitLabel'); if(!l) return;
+    if(window.config.profitVisible || !window.config.password) {
+        let t = 0; const now = new Date();
+        if(window.db) {
+            window.db.forEach(p => p.visits?.forEach(v => { 
+                const d = new Date(v.date);
+                if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && v.paid) 
+                    t += (v.total - (v.cost || 0)); 
+            }));
+        }
+        l.innerText = t.toLocaleString();
+    } else { l.innerText = '******'; }
+};
+
+// --- HÀM RENDER BẢNG MÀU ---
+window.renderColorPalette = function(containerId, inputId, currentVal) {
+    const container = document.getElementById(containerId);
+    if(!container) return;
+    
+    let html = '';
+    songPalette.forEach(c => {
+        html += `<div class="color-swatch ${c.color === currentVal ? 'active' : ''}" 
+                      style="background-color: ${c.color};" 
+                      title="${c.name}"
+                      onclick="window.selectColor('${inputId}', '${c.color}', this)"></div>`;
+    });
+    container.innerHTML = html;
+};
+
+window.selectColor = function(inputId, color, swatchEl) {
+    const input = document.getElementById(inputId);
+    if(input) input.value = color;
+    
+    // Update visual active state
+    const parent = swatchEl.parentElement;
+    Array.from(parent.children).forEach(c => c.classList.remove('active'));
+    swatchEl.classList.add('active');
+};
+
+// --- MODAL CÀI ĐẶT ---
+
+window.switchSettingsTab = function(id, btn) {
+    document.querySelectorAll('.settings-panel').forEach(p=>p.classList.add('hidden')); 
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+};
+
+window.openSettings = function() {
+    document.getElementById('sModal').classList.add('active');
+    document.getElementById('confTitle').value = window.config.clinicTitle;
+    document.getElementById('confDoctor').value = window.config.doctorName;
+    
+    // Load màu sắc
+    const profitText = window.config.profitTextColor || '#3e2723';
+    const profitBg = window.config.profitBgColor || '#ffffff';
+    document.getElementById('profitTextColorInput').value = profitText;
+    document.getElementById('profitBgColorInput').value = profitBg;
+    
+    // Render bảng màu
+    window.renderColorPalette('paletteTextContainer', 'profitTextColorInput', profitText);
+    window.renderColorPalette('paletteBgContainer', 'profitBgColorInput', profitBg);
+
+    const passInput = document.getElementById('confPass');
+    if (passInput) {
+        passInput.value = window.config.password; passInput.removeAttribute('readonly');
+        passInput.setAttribute('type', 'number'); passInput.setAttribute('inputmode', 'numeric'); passInput.setAttribute('pattern', '[0-9]*');
+    }
+    document.getElementById('headerOverlayInput').value = window.config.headerOverlayOpacity || 0;
+    document.getElementById('overlayValueDisplay').innerText = (window.config.headerOverlayOpacity || 0) + '%';
+    if(window.config.qrCodeImage) document.getElementById('previewQrSettings').src = window.config.qrCodeImage;
+    window.renderDiseaseSettings(); window.renderProcSettings(); window.renderTuChanConfig();
+};
+
+window.saveSettings = async function() {
+    window.config.clinicTitle = document.getElementById('confTitle').value;
+    window.config.doctorName = document.getElementById('confDoctor').value;
+    
+    // Lưu màu sắc
+    window.config.profitTextColor = document.getElementById('profitTextColorInput').value;
+    window.config.profitBgColor = document.getElementById('profitBgColorInput').value;
+
+    const passInput = document.getElementById('confPass'); if(passInput) window.config.password = passInput.value;
+    if(window.saveConfig) await window.saveConfig(); 
+    window.updateHeader(); 
+    if(window.closeModals) window.closeModals();
+};
+
+window.addNewDisease = function() { 
+    // Reset biến tạm
+    tempEastOptions = [{name: "Bài thuốc 1", ingredients: []}];
+    currentEastOptionIndex = 0;
+    
+    document.getElementById('diseaseModalTitle').innerText='Thêm bệnh mới';
+    document.getElementById('diseaseEditIndex').value='';
+    document.getElementById('diseaseName').value='';
+    document.getElementById('diseaseSymptoms').value='';
+    document.getElementById('diseaseEastName').value = '';
+    
+    // Reset containers
+    const eastContainer = document.getElementById('eastIngredientsContainer');
+    const westContainer = document.getElementById('westMedicinesContainer');
+    if(eastContainer) eastContainer.innerHTML = '';
+    if(westContainer) westContainer.innerHTML = '';
+    
+    // Thêm dòng mặc định
+    window.renderEastIngInSettings({});
+    window.addWestMedicine();
+    
+    // Render tabs
+    window.renderEastTabsInSettings();
+    
+    // Mở modal bệnh (có thể mở trên modal cài đặt)
+    document.getElementById('diseaseModal').classList.add('active');
+};
+
+window.editDisease = function(index) { 
+    const d = window.config.diseases[index]; 
+    document.getElementById('diseaseModalTitle').innerText='Sửa bệnh'; 
+    document.getElementById('diseaseEditIndex').value=index; 
+    document.getElementById('diseaseName').value=d.name; 
+    document.getElementById('diseaseSymptoms').value=d.sym; 
+    
+    // Reset containers
+    const eastContainer = document.getElementById('eastIngredientsContainer');
+    const westContainer = document.getElementById('westMedicinesContainer');
+    if(eastContainer) eastContainer.innerHTML = '';
+    if(westContainer) westContainer.innerHTML = '';
+    
+    // Load thuốc Tây Y
+    if(d.rxWest && d.rxWest.length){
+        d.rxWest.forEach(m => window.renderWestMedInSettings(m));
+    } else {
+        window.addWestMedicine();
+    }
+    
+    // Load thuốc Đông Y
+    if(d.eastOptions && d.eastOptions.length) {
+        tempEastOptions = JSON.parse(JSON.stringify(d.eastOptions));
+        currentEastOptionIndex = 0;
+    } else {
+        tempEastOptions = [{name: "Bài 1", ingredients: []}];
+        currentEastOptionIndex = 0;
+    }
+    
+    window.renderEastTabsInSettings();
+    
+    // Mở modal bệnh
+    document.getElementById('diseaseModal').classList.add('active');
+};
+
+window.renderEastTabsInSettings = function() { 
+    const c = document.getElementById('eastIngredientsContainer');
+    let t = document.getElementById('eastSettingsTabs');
+    const n = document.getElementById('diseaseEastName');
+    
+    // FIX: Kiểm tra n tồn tại trước khi thêm tabs
+    if(!t && n && n.parentElement){
+        t = document.createElement('div');
+        t.id = 'eastSettingsTabs';
+        t.className = 'flex gap-2 overflow-x-auto pb-2 mb-2 border-b border-dashed border-[#d7ccc8]';
+        n.parentElement.insertBefore(t, n);
+    }
+    
+    if(t) {
+        t.innerHTML = tempEastOptions.map((o,i)=>`
+            <button onclick="window.switchEastPresetSettings(${i})" 
+                    class="px-3 py-1 rounded-full text-xs font-bold ${i===currentEastOptionIndex?'bg-[#5d4037] text-white':'bg-gray-100 text-gray-600'}">
+                ${o.name||'Bài '+(i+1)}
+            </button>`).join('') + 
+            `<button onclick="window.addEastPresetInSettings()" 
+                    class="px-3 py-1 rounded-full text-xs bg-green-50 text-green-700 border border-green-200">+ Thêm</button>
+             ${tempEastOptions.length>1 ? 
+                '<button onclick="window.removeCurrentEastPreset()" class="px-2 py-1 text-xs text-red-500 ml-2">Xóa</button>' : 
+                ''}`;
+    }
+    
+    // FIX: Đảm bảo có dữ liệu mặc định
+    if(tempEastOptions.length === 0) {
+        tempEastOptions = [{name: "Bài 1", ingredients: []}];
+        currentEastOptionIndex = 0;
+    }
+    
+    if(tempEastOptions[currentEastOptionIndex]){
+        if(n) n.value = tempEastOptions[currentEastOptionIndex].name || '';
+        c.innerHTML = '';
+        
+        // FIX: Đảm bảo có ít nhất một dòng thuốc
+        if(tempEastOptions[currentEastOptionIndex].ingredients.length === 0) {
+            window.renderEastIngInSettings({});
+        } else {
+            tempEastOptions[currentEastOptionIndex].ingredients.forEach(g => window.renderEastIngInSettings(g));
+        }
+    }
+};
+
+window.switchEastPresetSettings = function(i) { 
+    window.saveCurrentTabToTemp(); 
+    currentEastOptionIndex = i; 
+    window.renderEastTabsInSettings(); 
+};
+
+window.addEastPresetInSettings = function() { 
+    window.saveCurrentTabToTemp(); 
+    tempEastOptions.push({name: `Bài ${tempEastOptions.length+1}`, ingredients: []}); 
+    currentEastOptionIndex = tempEastOptions.length-1; 
+    window.renderEastTabsInSettings(); 
+};
+
+window.removeCurrentEastPreset = function() { 
+    if(tempEastOptions.length <= 1) return;
+    if(confirm("Xóa bài này?")){ 
+        tempEastOptions.splice(currentEastOptionIndex,1); 
+        currentEastOptionIndex = 0; 
+        window.renderEastTabsInSettings(); 
+    } 
+};
+
+window.saveCurrentTabToTemp = function() {
+    if(currentEastOptionIndex === -1 || !tempEastOptions[currentEastOptionIndex]) return;
+    
+    const n = document.getElementById('diseaseEastName');
+    if(n) tempEastOptions[currentEastOptionIndex].name = n.value.trim();
+    
+    const ig = [];
+    // FIX: Sửa selector đúng với HTML thực tế
+    document.querySelectorAll('#eastIngredientsContainer .med-row-grid').forEach(r => {
+        const nameInput = r.querySelector('.song-input.ipad-input-fix');
+        const qtyInput = r.querySelector('.med-input-large.ipad-input-fix');
+        const priceInput = r.querySelectorAll('.med-input-large.ipad-input-fix')[1]; // Lấy input giá
+        
+        const na = nameInput ? nameInput.value.trim() : '';
+        const q = qtyInput ? parseInt(qtyInput.value) || 0 : 0;
+        const p = priceInput ? parseInt(priceInput.value) || 0 : 0;
+        
+        if(na) ig.push({name: na, qty: q, days: 1, price: p});
+    });
+    
+    tempEastOptions[currentEastOptionIndex].ingredients = ig;
+};
+
+window.renderEastIngInSettings = function(ing={}) { 
+    const c = document.getElementById('eastIngredientsContainer');
+    const d = document.createElement('div');
+    d.className = 'disease-ingredient-row med-row-grid';
+    d.innerHTML = `
+        <button onclick="this.parentElement.remove()" class="med-delete-btn">&times;</button>
+        <div class="med-row-name">
+            <input type="text" class="song-input ipad-input-fix east-ingredient-name" placeholder="Tên vị..." value="${ing.name||''}">
+        </div>
+        <div class="med-input-group">
+            <label>SL</label>
+            <input type="number" class="med-input-large ipad-input-fix east-ingredient-qty" value="${ing.qty||10}">
+        </div>
+        <div class="med-input-group">
+            <label>ĐG</label>
+            <input type="number" class="med-input-large ipad-input-fix east-ingredient-price" value="${ing.price||0}">
+        </div>`;
+    c.appendChild(d);
+};
+
+window.addEastIngredient = function() { 
+    window.renderEastIngInSettings({}); 
+};
+
+window.renderWestMedInSettings = function(med={}) { 
+    const c = document.getElementById('westMedicinesContainer');
+    const d = document.createElement('div');
+    d.className = 'disease-ingredient-row med-row-grid';
+    d.innerHTML = `
+        <button onclick="this.parentElement.remove()" class="med-delete-btn">&times;</button>
+        <div class="med-row-name">
+            <input type="text" class="song-input ipad-input-fix west-medicine-name" placeholder="Tên thuốc..." value="${med.name||''}">
+        </div>
+        <div class="med-input-group">
+            <label>SL</label>
+            <input type="number" class="med-input-large ipad-input-fix west-medicine-qty" value="${med.qty||2}">
+        </div>
+        <div class="med-input-group">
+            <label>ĐG</label>
+            <input type="number" class="med-input-large ipad-input-fix west-medicine-price" value="${med.price||0}">
+        </div>`;
+    c.appendChild(d);
+};
+
+window.addWestMedicine = function() { 
+    window.renderWestMedInSettings({}); 
+};
+
+window.saveDisease = async function() { 
+    const n = document.getElementById('diseaseName').value.trim();
+    if(!n) return alert('Nhập tên bệnh');
+    
+    const s = document.getElementById('diseaseSymptoms').value.trim();
+    
+    // FIX: Đảm bảo lưu tab hiện tại trước
+    window.saveCurrentTabToTemp();
+    
+    // Lấy thuốc Tây Y
+    const w = [];
+    document.querySelectorAll('#westMedicinesContainer .med-row-grid').forEach(r => {
+        const nameInput = r.querySelector('.song-input.ipad-input-fix');
+        const qtyInput = r.querySelector('.med-input-large.ipad-input-fix');
+        const priceInput = r.querySelectorAll('.med-input-large.ipad-input-fix')[1];
+        
+        const na = nameInput ? nameInput.value.trim() : '';
+        const q = qtyInput ? parseInt(qtyInput.value) || 0 : 0;
+        const p = priceInput ? parseInt(priceInput.value) || 0 : 0;
+        
+        if(na) w.push({name: na, qty: q, days: 1, price: p});
+    });
+    
+    // FIX: Đảm bảo tempEastOptions có dữ liệu
+    const eastOpts = tempEastOptions.filter(o => o.name && o.name.trim() !== '');
+    if(eastOpts.length === 0) {
+        eastOpts.push({name: "Bài thuốc", ingredients: []});
+    }
+    
+    const d = {
+        name: n,
+        sym: s,
+        rxWest: w,
+        eastOptions: eastOpts
+    };
+    
+    const i = document.getElementById('diseaseEditIndex').value;
+    if(i !== ''){
+        window.config.diseases[i] = d;
+    } else {
+        window.config.diseases.push(d);
+    }
+    
+    if(window.saveConfig) await window.saveConfig();
+    window.renderDiseaseSettings();
+    
+    // Dùng hàm đóng riêng cho diseaseModal
+    window.closeDiseaseModal();
+};
+
+window.deleteDisease = async function(i) { 
+    if(confirm('Xóa?')){ 
+        window.config.diseases.splice(i,1); 
+        if(window.saveConfig) await window.saveConfig(); 
+        window.renderDiseaseSettings(); 
+    } 
+};
+
+window.renderDiseaseSettings = function() { 
+    const l = document.getElementById('diseaseList'); 
+    if(!l) return; 
+    l.innerHTML = window.config.diseases.map((d,i)=>`
+        <div class="flex justify-between items-center p-3 border rounded bg-white shadow-sm mb-1">
+            <div class="font-bold text-sm text-[#3e2723]">${d.name} 
+                <span class="text-xs font-normal text-gray-500">(${d.eastOptions ? d.eastOptions.length : 0} bài)</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="window.editDisease(${i})" class="text-xs px-3 py-1 bg-[#efebe9] rounded font-bold text-[#5d4037]">SỬA</button>
+                <button onclick="window.deleteDisease(${i})" class="text-xs px-3 py-1 bg-red-50 rounded text-red-600">XÓA</button>
+            </div>
+        </div>`).join(''); 
+};
+
+window.renderProcSettings = function() { 
+    const l = document.getElementById('procList'); 
+    if(!l) return; 
+    l.innerHTML = window.config.procs.map((p,i)=>`
+        <div class="flex justify-between items-center p-3 border rounded bg-white mb-1">
+            <div class="text-sm font-bold text-[#5d4037]">${p.name} 
+                <span class="font-normal text-gray-400">(${p.price.toLocaleString()})</span>
+            </div>
+            <button onclick="window.deleteProc(${i})" class="text-xs px-2 py-1 bg-red-50 rounded text-red-600">Xóa</button>
+        </div>`).join(''); 
+};
+
+window.addProc = async function() { 
+    const n = document.getElementById('newProcName').value; 
+    const p = parseInt(document.getElementById('newProcPrice').value); 
+    if(n && p) { 
+        window.config.procs.push({name: n, price: p}); 
+        document.getElementById('newProcName').value = ''; 
+        document.getElementById('newProcPrice').value = ''; 
+        window.renderProcSettings(); 
+        if(window.saveConfig) await window.saveConfig(); 
+    } 
+};
+
+window.deleteProc = async function(i) { 
+    if(confirm('Xóa?')) { 
+        window.config.procs.splice(i,1); 
+        window.renderProcSettings(); 
+        if(window.saveConfig) await window.saveConfig(); 
+    } 
+};
+
+window.renderTuChanConfig = function() { 
+    ['vong','van','vanhoi','thiet','thietchan','machchan'].forEach(k => { 
+        const c = document.getElementById('setting_list_'+k); 
+        if(!c) return; 
+        c.innerHTML = (window.config.tuChan[k] || []).map((v,i)=>`
+            <div class="flex justify-between items-center bg-gray-50 p-2 mb-1 rounded border border-gray-100">
+                <span class="text-sm text-gray-700">${v}</span>
+                <button onclick="window.deleteTuChanItem('${k}',${i})" class="text-xs text-red-500 font-bold px-2 py-1">&times;</button>
+            </div>`).join(''); 
+    }); 
+};
+
+window.addTuChanItem = async function(k) { 
+    const i = document.getElementById('setting_new_'+k); 
+    const v = i.value.trim(); 
+    if(!v) return; 
+    if(!window.config.tuChan[k]) window.config.tuChan[k] = []; 
+    window.config.tuChan[k].push(v); 
+    if(window.saveConfig) await window.saveConfig(); 
+    i.value = ''; 
+    window.renderTuChanConfig(); 
+};
+
+window.deleteTuChanItem = async function(k,i) { 
+    if(confirm('Xóa?')){ 
+        window.config.tuChan[k].splice(i,1); 
+        if(window.saveConfig) await window.saveConfig(); 
+        window.renderTuChanConfig(); 
+    } 
+};
+
+// --- HÀM ĐÓNG MODAL BỆNH RIÊNG ---
+window.closeDiseaseModal = function() {
+    console.log('Đang đóng modal bệnh...');
+    
+    // 1. Đóng modal bệnh
+    const modal = document.getElementById('diseaseModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    
+    // 2. Reset biến tạm
+    tempEastOptions = [];
+    currentEastOptionIndex = -1;
+    
+    // 3. Reset các trường input
+    const diseaseName = document.getElementById('diseaseName');
+    const diseaseSymptoms = document.getElementById('diseaseSymptoms');
+    const diseaseEastName = document.getElementById('diseaseEastName');
+    const diseaseEditIndex = document.getElementById('diseaseEditIndex');
+    
+    if (diseaseName) diseaseName.value = '';
+    if (diseaseSymptoms) diseaseSymptoms.value = '';
+    if (diseaseEastName) diseaseEastName.value = '';
+    if (diseaseEditIndex) diseaseEditIndex.value = '';
+    
+    // 4. Clear containers
+    const eastContainer = document.getElementById('eastIngredientsContainer');
+    const westContainer = document.getElementById('westMedicinesContainer');
+    if (eastContainer) eastContainer.innerHTML = '';
+    if (westContainer) westContainer.innerHTML = '';
+    
+    // 5. Xóa tabs cũ
+    const tabsContainer = document.getElementById('eastSettingsTabs');
+    if (tabsContainer) tabsContainer.innerHTML = '';
+    
+    // 6. Đảm bảo modal cài đặt vẫn hiển thị (nếu đang mở)
+    const sModal = document.getElementById('sModal');
+    if (sModal && sModal.classList.contains('active')) {
+        // Giữ modal cài đặt mở
+        sModal.style.display = 'flex';
+    }
+};
