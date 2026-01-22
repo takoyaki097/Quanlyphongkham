@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="YHCT Pro">
+    
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <title>YHCT Pro - Quản lý Phòng Khám</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="max-w-3xl mx-auto relative">
+        <div id="mainHeader">
+            <div id="headerOverlay"></div>
+            <div id="mainHeaderCard" class="header-card flex flex-col md:flex-row items-stretch gap-4 md:gap-6">
+                <div class="flex-1 flex flex-col justify-center space-y-3 md:pr-6 md:border-r border-dashed header-sep-line">
+                    <div class="border-b border-dashed header-sep-line pb-2 text-center md:text-left">
+                        <h1 id="displayTitle" class="text-2xl md:text-3xl font-black uppercase tracking-wide leading-none">Phòng Khám</h1>
+                    </div>
+                    <div id="displayDoctor" class="text-center md:text-left leading-tight">
+                        <span class="text-xs font-bold uppercase block opacity-80 mb-1">Xin chào,</span>
+                        <span class="font-black text-xl">BS. Đông Y</span>
+                    </div>
+                    <div id="headerInfoBox" class="bg-[#3e2723]/5 rounded-xl p-3 text-xs space-y-1.5 border border-[#3e2723]/10 transition-all duration-300">
+                        <div class="flex items-center justify-between md:justify-start gap-3"><span class="font-bold uppercase w-16 text-right md:text-left opacity-70">Dương:</span><span id="headerDate" class="font-mono font-bold">--/--/----</span></div>
+                        <div class="flex items-center justify-between md:justify-start gap-3"><span class="font-bold uppercase w-16 text-right md:text-left opacity-70">Âm Lịch:</span><span id="headerLunar" class="font-bold whitespace-nowrap overflow-hidden text-ellipsis">Đang tải...</span></div>
+                        <div class="flex items-center justify-between md:justify-start gap-3"><span class="font-bold uppercase w-16 text-right md:text-left opacity-70">Vận Khí:</span><span id="headerYunQi" class="font-bold">...</span></div>
+                        <div class="flex items-center justify-between md:justify-start gap-3"><span class="font-bold uppercase w-16 text-right md:text-left opacity-70">Tí Ngọ:</span><span id="headerZiWu" class="font-bold">...</span></div>
+                    </div>
+                </div>
+                <div class="md:w-48 flex flex-col justify-center pt-2 md:pt-0 pointer-events-auto" onclick="window.handleProfitBoxClick()">
+                    <p id="monthLabel" class="text-[10px] font-black uppercase text-center mb-2 tracking-[2px]">DOANH THU THÁNG</p>
+                    <div id="profitBoxContainer" class="bg-white/50 border-2 border-[#3e2723]/10 px-2 py-6 rounded-2xl text-center cursor-pointer hover:bg-[#3e2723]/5 transition-all shadow-sm h-full flex items-center justify-center flex-col">
+                        <div id="profitLabel" class="font-mono text-2xl md:text-3xl tracking-tighter font-black">******</div>
+                        <div class="text-[10px] uppercase font-bold opacity-50 mt-1">VNĐ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="menuContainer">
+            <div class="relative mb-6" id="searchArea">
+                <input type="text" id="search" onkeyup="window.debouncedRender()" placeholder="🔍 Tìm tên hoặc số điện thoại..." class="ipad-input-fix text-[#3e2723] outline-none">
+            </div>
+            
+            <div class="grid grid-cols-5 gap-3 mb-6 relative z-30">
+                <button type="button" onclick="window.openPatientModal()" class="col-span-2 btn-glass py-4 uppercase text-xs text-[#3e2723] flex flex-col items-center gap-1 hover:bg-white/90">
+                    <span class="text-xl">➕</span> Bệnh nhân
+                </button>
+                <button type="button" onclick="window.openStats()" class="col-span-2 btn-glass py-4 uppercase text-xs text-[#3e2723] flex flex-col items-center gap-1 hover:bg-white/90">
+                    <span class="text-xl">📊</span> Báo cáo
+                </button>
+                <button type="button" onclick="window.openSettings()" class="btn-glass text-2xl text-[#5d4037] hover:bg-white/90">⚙️</button>
+            </div>
+            
+            <div id="monthFilterArea" class="relative z-30"></div>
+            <div id="list" class="space-y-3 pb-24 relative z-25"></div>
+        </div>
+    </div>
+
+    <script src="js/ui-helper.js"></script>
+    <script src="js/knowledge-acupoints.js"></script>
+    <script src="js/knowledge-herbs.js"></script> 
+    <script src="js/knowledge-time.js"></script>
+    <script src="js/knowledge-ai.js"></script>
+    <script src="js/config-core.js"></script>
+    <script src="js/config-header.js"></script>
+    <script src="js/config-settings-ui.js"></script>
+    <script src="js/config-disease.js"></script>
+    <script src="js/config-procedures.js"></script>
+    <script src="js/database.js"></script>   
+    <script src="js/patient.js"></script>    
+    <script src="js/visit.js"></script>      
+    <script src="js/report.js"></script>     
+    <script src="js/main.js"></script>
+
+    <script src="js/tpl-visit.js"></script>     <script src="js/tpl-patient.js"></script>   <script src="js/tpl-settings.js"></script>  <script src="js/tpl-resources.js"></script> <script src="js/template-loader.js"></script>
+
+    <script>
+        // Gọi hàm nạp HTML từ template-loader.js ngay khi tải trang
+        if(window.loadAllModals) {
+            window.loadAllModals();
+        } else {
+            console.error("Chưa tải được template-loader.js!");
+        }
+
+        // --- SCRIPT QUAN TRỌNG: XỬ LÝ NHẬP FILE BACKUP ---
+        // (Viết trực tiếp ở đây để tránh lỗi Cache trình duyệt trên điện thoại)
+        window.handleJSONFileSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    const jsonContent = JSON.parse(e.target.result);
+                    
+                    // Kiểm tra tính hợp lệ
+                    if (!jsonContent.db && !jsonContent.config) {
+                        alert("❌ Lỗi: File không đúng định dạng dữ liệu phòng khám!");
+                        return;
+                    }
+
+                    if (confirm("Tìm thấy bản sao lưu hợp lệ!\n\nBạn có muốn khôi phục dữ liệu không?\n(Dữ liệu hiện tại sẽ bị thay thế)")) {
+                        
+                        // 1. Khôi phục DB
+                        if (jsonContent.db) {
+                            window.db = jsonContent.db;
+                            await localforage.setItem('yhct_db_v49', window.db);
+                        }
+
+                        // 2. Khôi phục Cấu hình
+                        if (jsonContent.config) {
+                            // Giữ lại ảnh nền cũ nếu file backup không có (để giao diện không bị trắng)
+                            const oldBg = window.config ? window.config.headerBgImage : null;
+                            const oldQr = window.config ? window.config.qrCodeImage : null;
+                            
+                            window.config = { ...window.defaultConfig, ...jsonContent.config };
+                            
+                            if (!window.config.headerBgImage && oldBg) window.config.headerBgImage = oldBg;
+                            if (!window.config.qrCodeImage && oldQr) window.config.qrCodeImage = oldQr;
+                            
+                            await localforage.setItem('yhct_cfg_v49', window.config);
+                        }
+
+                        alert("✅ Khôi phục thành công! Ứng dụng sẽ tự tải lại.");
+                        window.location.reload();
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("❌ Lỗi khi đọc file: " + err.message);
+                } finally {
+                    event.target.value = ''; // Reset để lần sau chọn lại file cũ vẫn nhận
+                }
+            };
+
+            reader.onerror = function() {
+                alert("Lỗi: Trình duyệt không thể đọc file này!");
+            };
+
+            reader.readAsText(file);
+        };
+    </script>
+</body>
+</html>
